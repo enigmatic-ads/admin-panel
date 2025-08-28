@@ -2,7 +2,7 @@ const { RedirectUrl } = require("../models");
 
 const generateEncryptedURL =  async (req, res) => {
   try {
-    const { url, keywords } = req.body;
+    const { url, keywords, campaignId } = req.body;
     console.log(url, keywords)
 
     if (!url) {
@@ -14,16 +14,17 @@ const generateEncryptedURL =  async (req, res) => {
     if (keywords && keywords.trim() !== "") {
       urls = keywords
         .split(",")
-        .map(word => url.replace("{keyword}", word.trim())); 
+        .map(word => url.replace("{keyword}", word.trim().split((/\s+/)).join("+"))); 
     } else {
       urls = [url];
     }
 
-    console.log(urls)
-
     const createdUrls = await Promise.all(
       urls.map(async (u) => {
-        const newRedirectDetails = await RedirectUrl.create({ redirect_url: u });
+        const newRedirectDetails = await RedirectUrl.create({ 
+          redirect_url: u, 
+          campaign_id: campaignId || null
+        });
         const encryptedUrl = `${process.env.BASE_URL}/?id=${newRedirectDetails.dataValues.id}`;
         return encryptedUrl;
       })

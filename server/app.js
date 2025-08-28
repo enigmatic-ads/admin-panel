@@ -128,7 +128,7 @@ app.get("/", async (req, res) => {
     
     const referer = req.headers.referer || req.headers.referrer || null;
     const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
-    const redirectUrl = url.dataValues.redirect_url;
+    let redirectUrl = url.dataValues.redirect_url;
 
     try {
       await ClientDetail.create({
@@ -141,6 +141,17 @@ app.get("/", async (req, res) => {
     } catch (error) {
       console.error("Error inserting into client details table:", error);
       return res.status(500).send("Error inserting into client details table");
+    }
+
+    // Build query params excluding "id"
+    const queryParams = { ...req.query };
+    delete queryParams.id;
+
+    // If there are extra params, append them
+    const queryString = new URLSearchParams(queryParams).toString();
+    if (queryString) {
+      // If redirectUrl already has "?", use "&", otherwise "?"
+      redirectUrl += (redirectUrl.includes("?") ? "&" : "?") + queryString;
     }
 
     console.log(`Redirecting to: ${redirectUrl}`);

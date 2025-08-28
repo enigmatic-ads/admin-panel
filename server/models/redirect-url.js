@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false,
       },
+      campaign_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
       redirect_url: {
         type: DataTypes.TEXT,
         allowNull: false,
