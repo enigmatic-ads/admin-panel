@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = (sequelize, DataTypes) => {
   const DayVisit = sequelize.define(
     'DayVisit',
@@ -10,15 +8,9 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false,
       },
-      url_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'RedirectUrl',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
+      campaign_id: {
+        type: DataTypes.STRING(30),
+        allowNull: true,
       },
       client_ip: {
         type: DataTypes.STRING(20),
@@ -42,20 +34,11 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ['url_id', 'client_ip'],
+          fields: ['campaign_id', 'client_ip'],
         },
       ],
     }
   );
-
-  DayVisit.associate = (models) => {
-    DayVisit.belongsTo(models.RedirectUrl, {
-      foreignKey: 'url_id',
-      as: 'redirectUrl',
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    });
-  };
 
   return DayVisit;
 };

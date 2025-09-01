@@ -14,7 +14,9 @@ const generateEncryptedURL =  async (req, res) => {
     if (keywords && keywords.trim() !== "") {
       urls = keywords
         .split(",")
-        .map(word => url.replace("{keyword}", word.trim().split((/\s+/)).join("+"))); 
+        .map(word => word.trim())
+        .filter(word => word.length > 0)
+        .map(word => url.replace("{keyword}", word.split(/\s+/).join("+")));
     } else {
       urls = [url];
     }
@@ -25,7 +27,7 @@ const generateEncryptedURL =  async (req, res) => {
           redirect_url: u, 
           campaign_id: campaignId || null
         });
-        const encryptedUrl = `${process.env.BASE_URL}/?id=${newRedirectDetails.dataValues.id}`;
+        const encryptedUrl = `${process.env.BASE_URL}/?id=${newRedirectDetails.dataValues.id}&campId=${campaignId}`;
         return encryptedUrl;
       })
     );

@@ -7,9 +7,7 @@ import Profile from "views/admin/profile";
 import DataTables from "views/admin/tables";
 import RTLDefault from "views/rtl/default";
 import EncryptURL from "views/admin/encrypt-url";
-
-// Auth Imports
-import SignIn from "views/auth/SignIn";
+import Reports from "views/admin/reports";
 
 // Icon Imports
 import {
@@ -21,6 +19,7 @@ import {
 } from "react-icons/md";
 
 import { FcDataConfiguration } from "react-icons/fc";
+import { GrDocumentText } from "react-icons/gr";
 
 const routes = [
   {
@@ -36,6 +35,13 @@ const routes = [
     path: "encrypt-url",
     icon: <FcDataConfiguration className="h-6 w-6" />,
     component: <EncryptURL />,
+  },
+  {
+    name: "Reports",
+    layout: "/admin",
+    path: "reports",
+    icon: <GrDocumentText className="h-6 w-6" />,
+    component: <Reports />,
   },
   {
     name: "NFT Marketplace",
@@ -59,12 +65,12 @@ const routes = [
     icon: <MdPerson className="h-6 w-6" />,
     component: <Profile />,
   },
-  {
-    name: "RTL Admin",
-    layout: "/rtl",
-    path: "rtl",
-    icon: <MdHome className="h-6 w-6" />,
-    component: <RTLDefault />,
-  }
+  // {
+  //   name: "RTL Admin",
+  //   layout: "/rtl",
+  //   path: "rtl",
+  //   icon: <MdHome className="h-6 w-6" />,
+  //   component: <RTLDefault />,
+  // }
 ];
 export default routes;

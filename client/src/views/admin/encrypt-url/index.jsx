@@ -15,6 +15,7 @@ export default function Encrypt() {
   const [errors, setErrors] = useState({});
   const [showButtons, setShowButtons] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -69,7 +70,7 @@ export default function Encrypt() {
       const data = await response.json();
       if (response.ok) {
         setResultUrls(data.encryptedUrls || []);
-        setShowButtons(true); // show reset + action buttons
+        setShowButtons(true);
       } else {
         alert("Error generating URL.");
       }
@@ -82,10 +83,7 @@ export default function Encrypt() {
   const handleCopy = async (url) => {
     if (!url) return;
     try {
-      if (
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === "function"
-      ) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
       } else {
         const input = document.createElement("input");
@@ -95,7 +93,9 @@ export default function Encrypt() {
         document.execCommand("copy");
         document.body.removeChild(input);
       }
-      alert("Copied to clipboard!");
+
+      setCopiedUrl(url); // mark as copied
+      setTimeout(() => setCopiedUrl(null), 2000); // reset after 2 sec
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -242,6 +242,7 @@ export default function Encrypt() {
                   key={index}
                   resultUrl={url}
                   handleCopy={() => handleCopy(url)}
+                  isCopied={copiedUrl === url} // pass copied state
                 />
               ))}
             </div>

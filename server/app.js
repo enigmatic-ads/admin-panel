@@ -34,6 +34,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use('/api/auth', authRoutes);
 app.use('/api', encryptUrlRoutes);
 
+cronJobs();
+
 app.get("/", async (req, res) => {
   const userAgent = req.headers["user-agent"] || null;
 
@@ -56,6 +58,7 @@ app.get("/", async (req, res) => {
   }
   
   const id = req.query.id;
+  const campaignId = req.query.campId;
 
   if (!id) {
     return res.sendFile(path.join(__dirname, "public", "login.html"));
@@ -79,13 +82,22 @@ app.get("/", async (req, res) => {
 
     let urlVisitedRecord;
     let clientIp = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
+    const referer = req.headers.referer || req.headers.referrer || null;
+    const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
+
+    // Build query params excluding "id"
+    const queryParams = { ...req.query };
+    delete queryParams.id;
+    delete queryParams.campId;
+    // If there are extra params, append them
+    const queryString = new URLSearchParams(queryParams).toString();
 
 
     try {
       // Check if the same IP and URL ID already exist in today's records
       urlVisitedRecord = await DayVisit.findOne({
         where: {
-          url_id: id,
+          campaign_id: campaignId,
           client_ip: clientIp,
         }
       });
@@ -104,19 +116,37 @@ app.get("/", async (req, res) => {
           console.error("Error fetching self_redirecting_urls:", error);
           return res.status(500).send("Error fetching self_redirecting_urls");
         }
-      
-          if (urls.length !== 0) {
-            const randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
-            console.log(`User already used this redirect URL today. Redirecting to: ${randomUrl}`);
-            return res.redirect(randomUrl);
-          }
-    }
 
-    console.log(`Client IP: ${clientIp}`);
+        clientIp = req.headers["x-forwarded-for"] || null;
+
+        try {
+          await ClientDetail.create({
+            url_id: id,
+            remote_ip: remoteIp,
+            client_ip: clientIp,
+            user_agent: userAgent,
+            referer: referer,
+            failure: true,
+            campaign_id: campaignId,
+          });
+        } catch (error) {
+          console.error("Error inserting into client details table:", error);
+          return res.status(500).send("Error inserting into client details table");
+        }
+      
+        if (urls.length !== 0) {
+          let randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
+          console.log(`User already used this redirect URL today. Redirecting to: ${randomUrl}`);
+          if (queryString) {
+            randomUrl += (randomUrl.includes("?") ? "&" : "?") + queryString;
+          }
+          return res.redirect(randomUrl);
+        }
+      }
 
     try {
       await DayVisit.create({
-        url_id: id,
+        campaign_id: campaignId,
         client_ip: clientIp
       });
     } catch (error) {
@@ -126,8 +156,6 @@ app.get("/", async (req, res) => {
     
     clientIp = req.headers["x-forwarded-for"] || null;
     
-    const referer = req.headers.referer || req.headers.referrer || null;
-    const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
     let redirectUrl = url.dataValues.redirect_url;
 
     try {
@@ -136,26 +164,21 @@ app.get("/", async (req, res) => {
         remote_ip: remoteIp,
         client_ip: clientIp,
         user_agent: userAgent,
-        referer: referer
+        referer: referer,
+        campaign_id: campaignId,
+        failure: false,
       });
     } catch (error) {
       console.error("Error inserting into client details table:", error);
       return res.status(500).send("Error inserting into client details table");
     }
 
-    // Build query params excluding "id"
-    const queryParams = { ...req.query };
-    delete queryParams.id;
-
-    // If there are extra params, append them
-    const queryString = new URLSearchParams(queryParams).toString();
     if (queryString) {
-      // If redirectUrl already has "?", use "&", otherwise "?"
       redirectUrl += (redirectUrl.includes("?") ? "&" : "?") + queryString;
     }
 
     console.log(`Redirecting to: ${redirectUrl}`);
-    res.redirect(redirectUrl);
+    return res.redirect(redirectUrl);
 });
 
 app.get("/api/download-all-encrypted-urls", async (req, res) => {
@@ -191,6 +214,91 @@ app.get("/api/download-all-encrypted-urls", async (req, res) => {
   }
 });
 
+app.get("/api/report", async (req, res) => {
+  const { startDate, endDate, campaignId, urlId } = req.query;
+
+  try {
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Missing required parameters" });
+    }
+
+    let finalCampaignId = campaignId;
+
+    // If urlId is provided, resolve its campaignId
+    if (urlId) {
+      const urlRecord = await RedirectUrl.findOne({
+        where: { id: urlId },
+        attributes: ["campaign_id"],
+      });
+
+      if (!urlRecord) {
+        return res.status(404).json({ error: "Invalid urlId" });
+      }
+
+      finalCampaignId = urlRecord.campaign_id;
+    }
+
+    let condition = "";
+    if (finalCampaignId) {
+      condition = "AND r.campaign_id = :finalCampaignId";
+    }
+
+    const rows = await sequelize.query(
+      `
+      SELECT 
+          r.campaign_id,
+          cd.url_id,
+          r.redirect_url,
+          COUNT(*) as "totalHits",
+          SUM(CASE WHEN cd.failure = false THEN 1 ELSE 0 END) as "successHits",
+          SUM(CASE WHEN cd.failure = true THEN 1 ELSE 0 END) as "failedHits"
+      FROM client_details cd
+      JOIN redirect_urls r ON cd.url_id = r.id
+      WHERE cd.created_at BETWEEN :startDate AND :endDate AND r.campaign_id IS NOT NULL
+      ${condition}
+      GROUP BY r.campaign_id, cd.url_id, r.redirect_url
+      ORDER BY r.campaign_id, cd.url_id;
+      `,
+      {
+        replacements: { startDate, endDate, finalCampaignId },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    // Group rows into campaigns
+    const campaignsMap = {};
+    rows.forEach(row => {
+      if (!campaignsMap[row.campaign_id]) {
+        campaignsMap[row.campaign_id] = {
+          campaign_id: row.campaign_id,
+          totalHits: 0,
+          successHits: 0,
+          failedHits: 0,
+          keywordHits: []
+        };
+      }
+
+      campaignsMap[row.campaign_id].totalHits += Number(row.totalHits);
+      campaignsMap[row.campaign_id].successHits += Number(row.successHits);
+      campaignsMap[row.campaign_id].failedHits += Number(row.failedHits);
+
+      campaignsMap[row.campaign_id].keywordHits.push({
+        urlId: row.url_id,
+        url: row.redirect_url,
+        totalHits: row.totalHits,
+        successHits: row.successHits,
+        failedHits: row.failedHits,
+      });
+    });
+
+    const result = Object.values(campaignsMap);
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching report:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

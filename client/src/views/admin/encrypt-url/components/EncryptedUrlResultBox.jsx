@@ -1,4 +1,6 @@
-export default function EncyptedUrlResultBox({ resultUrl, handleCopy }) {
+import { Check } from "lucide-react";
+
+export default function EncyptedUrlResultBox({ resultUrl, handleCopy, isCopied }) {
   if (!resultUrl) return null;
 
   return (
@@ -11,9 +13,18 @@ export default function EncyptedUrlResultBox({ resultUrl, handleCopy }) {
       />
       <button
         onClick={handleCopy}
-        className="bg-green-600 text-white px-4 rounded-r-lg hover:bg-green-700"
+        className={`px-4 rounded-r-lg text-white transition ${
+          isCopied ? "bg-green-700" : "bg-green-600 hover:bg-green-700"
+        }`}
       >
-        Copy
+        {isCopied ? (
+          <span className="flex items-center space-x-1">
+            <Check className="w-4 h-4" />
+            <span>Copied</span>
+          </span>
+        ) : (
+          "Copy"
+        )}
       </button>
     </div>
   );

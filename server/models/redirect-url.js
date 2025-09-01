@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       campaign_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(30),
         allowNull: true,
       },
       redirect_url: {
