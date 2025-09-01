@@ -26,7 +26,6 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     console.error('Unable to connect to the database:', err);
   });
 
-app.use(cors({ origin: process.env.REACT_APP_URL, credentials: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
