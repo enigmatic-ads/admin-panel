@@ -16,6 +16,7 @@ export default function Encrypt() {
   const [showButtons, setShowButtons] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(null);
+  const [source, setSource] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -48,6 +49,9 @@ export default function Encrypt() {
       newErrors.campaignId =
         "*Incorrect format: Campaign ID should be an integer";
     }
+    if (!source.trim()) {
+      newErrors.source = "*Source is required";
+    }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -63,7 +67,7 @@ export default function Encrypt() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ url: inputUrl, keywords, campaignId }),
+          body: JSON.stringify({ url: inputUrl, keywords, campaignId, source }),
         }
       );
 
@@ -119,7 +123,7 @@ export default function Encrypt() {
 
   const handleDownloadAll = () => {
     window.location.href =
-      "http://localhost:4000/api/download-all-encrypted-urls";
+      `${process.env.REACT_APP_BACKEND_BASE_URL}/api/download-all-encrypted-urls`;
   };
 
   const handleReset = () => {
@@ -130,6 +134,7 @@ export default function Encrypt() {
     setErrors({});
     setShowButtons(false);
     setShowResults(false);
+    setSource("");
   };
 
   return (
@@ -193,6 +198,26 @@ export default function Encrypt() {
             </div>
             {errors.campaignId && (
               <p className="text-red-600 text-sm mt-1">{errors.campaignId}</p>
+            )}
+          </div>
+
+          {/* Source Dropdown */}
+          <div className="w-full">
+            <label className="block text-gray-700 text-sm font-medium mb-2">
+              Select Source
+            </label>
+            <select
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:outline-none"
+            >
+              <option value="">-- Select Source --</option>
+              <option value="Outbrain">Outbrain</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Taboola">Taboola</option>
+            </select>
+            {errors.source && (
+              <p className="text-red-600 text-sm mt-1">{errors.source}</p>
             )}
           </div>
 

@@ -2,7 +2,7 @@ const { RedirectUrl } = require("../models");
 
 const generateEncryptedURL =  async (req, res) => {
   try {
-    const { url, keywords, campaignId } = req.body;
+    const { url, keywords, campaignId, source } = req.body;
     console.log(url, keywords)
 
     if (!url) {
@@ -25,7 +25,8 @@ const generateEncryptedURL =  async (req, res) => {
       urls.map(async (u) => {
         const newRedirectDetails = await RedirectUrl.create({ 
           redirect_url: u, 
-          campaign_id: campaignId || null
+          campaign_id: campaignId || null,
+          source
         });
         const encryptedUrl = `${process.env.BASE_URL}/?id=${newRedirectDetails.dataValues.id}&campId=${campaignId}`;
         return encryptedUrl;
