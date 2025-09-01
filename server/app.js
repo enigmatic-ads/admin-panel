@@ -92,6 +92,41 @@ app.get("/", async (req, res) => {
     // If there are extra params, append them
     const queryString = new URLSearchParams(queryParams).toString();
 
+    // If referer is null, redirect to a random self-redirecting URL
+    if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
+      clientIp = req.headers["x-forwarded-for"] || null;
+      try {
+        await ClientDetail.create({
+          url_id: id,
+          remote_ip: remoteIp,
+          client_ip: clientIp,
+          user_agent: userAgent,
+          referer: referer,
+          failure: true,
+          campaign_id: campaignId,
+        });
+      } catch (error) {
+        console.error("Error inserting into client details table:", error);
+        return res.status(500).send("Error inserting into client details table");
+      }
+
+      let urls;
+      try {
+        urls = await SelfRedirectingUrl.findAll({
+          attributes: ["url"],
+        });
+      } catch (error) {
+        console.error("Error fetching self_redirecting_urls:", error);
+        return res.status(500).send("Error fetching self_redirecting_urls");
+      }
+    
+        if (urls.length !== 0) {
+          const randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
+          console.log(`Referer is null. Redirecting to: ${randomUrl}`);
+          return res.redirect(randomUrl);
+        }
+    }
+
 
     try {
       // Check if the same IP and URL ID already exist in today's records
