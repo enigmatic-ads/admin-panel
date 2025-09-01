@@ -61,7 +61,7 @@ app.get("/", async (req, res) => {
   const campaignId = req.query.campId;
 
   if (!id) {
-    return res.sendFile(path.join(__dirname, "public", "login.html"));
+    return res.sendFile(path.join(__dirname, "../client/build", "index.html"));
   }
 
   let url;
@@ -297,6 +297,17 @@ app.get("/api/report", async (req, res) => {
   } catch (error) {
     console.error("Error fetching report:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Serve react build folder
+app.use(express.static(path.join(__dirname, "../client/build")));
+
+app.use((req, res, next) => {
+  if (req.method === "GET" && !req.path.startsWith("/api")) {
+    res.sendFile(path.join(__dirname, "../client/build", "index.html"));
+  } else {
+    next();
   }
 });
 
