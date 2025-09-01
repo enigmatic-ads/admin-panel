@@ -72,7 +72,7 @@ export default function Reports() {
     }
 
     const response = await fetch(
-      `http://localhost:4000/api/report?${params.toString()}`
+      `${process.env.REACT_APP_BACKEND_BASE_URL}/api/report?${params.toString()}`
     );
     const data = await response.json();
 

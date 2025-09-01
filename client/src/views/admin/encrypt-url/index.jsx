@@ -56,7 +56,7 @@ export default function Encrypt() {
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/generate-encrypted-url",
+        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/generate-encrypted-url`,
         {
           method: "POST",
           headers: {
