@@ -73,7 +73,11 @@ export default function Encrypt() {
 
       const data = await response.json();
       if (response.ok) {
-        setResultUrls(data.encryptedUrls || []);
+        const combined = (data.encryptedUrls || []).map((url, index) => ({
+          url,
+          keyword: data.keywords ? data.keywords[index] : null,
+        }));
+        setResultUrls(combined);
         setShowButtons(true);
       } else {
         alert("Error generating URL.");
@@ -262,12 +266,13 @@ export default function Encrypt() {
           {/* Results */}
           {showResults && resultUrls.length > 0 && (
             <div className="w-full space-y-3 mt-6">
-              {resultUrls.map((url, index) => (
+              {resultUrls.map((item, index) => (
                 <EncyptedUrlResultBox
                   key={index}
-                  resultUrl={url}
-                  handleCopy={() => handleCopy(url)}
-                  isCopied={copiedUrl === url} // pass copied state
+                  resultUrl={item.url}
+                  keyword={item.keyword}
+                  handleCopy={() => handleCopy(item.url)}
+                  isCopied={copiedUrl === item.url}
                 />
               ))}
             </div>

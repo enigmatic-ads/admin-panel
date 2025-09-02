@@ -1,22 +1,26 @@
 const { RedirectUrl } = require("../models");
 
-const generateEncryptedURL =  async (req, res) => {
+const generateEncryptedURL = async (req, res) => {
   try {
     const { url, keywords, campaignId, source } = req.body;
-    console.log(url, keywords)
+    console.log(url, keywords);
 
     if (!url) {
       return res.status(400).json({ error: "URL is required" });
     }
 
-     let urls = [];
+    let urls = [];
+    let keywordList = [];
 
     if (keywords && keywords.trim() !== "") {
-      urls = keywords
+      keywordList = keywords
         .split(",")
         .map(word => word.trim())
-        .filter(word => word.length > 0)
-        .map(word => url.replace("{keyword}", word.split(/\s+/).join("+")));
+        .filter(word => word.length > 0);
+
+      urls = keywordList.map(
+        word => url.replace("{keyword}", word.split(/\s+/).join("+"))
+      );
     } else {
       urls = [url];
     }
@@ -33,11 +37,15 @@ const generateEncryptedURL =  async (req, res) => {
       })
     );
 
-    res.status(201).json({ encryptedUrls: createdUrls });
+    res.status(201).json({ 
+      encryptedUrls: createdUrls,
+      keywords: keywordList
+    });
   } catch (error) {
     console.error("Error generating redirect URL:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 module.exports = { generateEncryptedURL };
