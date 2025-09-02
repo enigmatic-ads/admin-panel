@@ -119,7 +119,7 @@ app.get("/", async (req, res) => {
     }
 
     let urlVisitedRecord;
-    let clientIp = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
+    let clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
     const referer = req.headers.referer || req.headers.referrer || null;
     const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
 
@@ -132,7 +132,7 @@ app.get("/", async (req, res) => {
 
     // If referer is null, redirect to a random self-redirecting URL
     if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
-      clientIp = req.headers["x-forwarded-for"] || null;
+      clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
       try {
         await ClientDetail.create({
           url_id: id,
@@ -187,7 +187,7 @@ app.get("/", async (req, res) => {
 
       if (urlVisitedRecord) {
         console.log("already visited");
-        clientIp = req.headers["x-forwarded-for"] || null;
+        clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
 
         try {
           await ClientDetail.create({
@@ -236,7 +236,7 @@ app.get("/", async (req, res) => {
       return res.redirect(fallbackUrl);
     }
     
-    clientIp = req.headers["x-forwarded-for"] || null;
+    clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
     
     let redirectUrl = url.dataValues.redirect_url;
 
