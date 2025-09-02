@@ -5,7 +5,7 @@ const cronJobs = require('./cron');
 const authRoutes = require('./routes/auth');
 const encryptUrlRoutes = require('./routes/encrypt-url');
 const cors = require('cors');
-const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl } = require('./models');
+const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog } = require('./models');
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx');
@@ -53,26 +53,7 @@ app.use('/api', encryptUrlRoutes);
 cronJobs();
 
 app.get("/", async (req, res) => {
-  const userAgent = req.headers["user-agent"] || null;
 
-  if (userAgent && userAgent == 'Mozilla/5.0 (Java) outbrain') {
-    let urls;
-    let randomUrl;
-        try {
-          urls = await SelfRedirectingUrl.findAll({
-            attributes: ["url"],
-          });
-        } catch (error) {
-          console.error("Error fetching self_redirecting_urls:", error);
-          return res.status(500).send("Error fetching self_redirecting_urls");
-        }
-      
-          if (urls.length !== 0) {
-            randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
-          }
-    return res.redirect(randomUrl);
-  }
-  
   const id = req.query.id;
   const campaignId = req.query.campId;
 
@@ -80,20 +61,61 @@ app.get("/", async (req, res) => {
     return res.sendFile(path.join(__dirname, "../client/build", "index.html"));
   }
 
+  let selfRedirectingUrls;
+  let fallbackUrl;
+  try {
+    selfRedirectingUrls = await SelfRedirectingUrl.findAll({
+      attributes: ["url"],
+    });
+  } catch (error) {
+    console.error("Error fetching self_redirecting_urls:", error);
+    try {
+      await ErrorLog.create({
+        api: "/",
+        message: "Error fetching from self_redirecting_urls table",
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+    } catch (logError) {
+      console.error("Failed to insert into error_logs table:", logError);
+    }
+    return res.status(500).send("Internal Server Error");
+  }
+
+  if (selfRedirectingUrls.length !== 0) {
+    fallbackUrl = selfRedirectingUrls[Math.floor(Math.random() * selfRedirectingUrls.length)].url;
+  }
+
+  const userAgent = req.headers["user-agent"] || null;
+
+  if (userAgent && userAgent == 'Mozilla/5.0 (Java) outbrain') {
+    return res.redirect(fallbackUrl);
+  }
+
   let url;
 
   try {
     url = await RedirectUrl.findOne({
-      where: { id }
+      where: { 
+        id,
+        campaign_id: campaignId,
+      }
     });
   } catch (error) {
-    console.error("Database error:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error fetching from redirect_urls:", error);
+    try {
+      await ErrorLog.create({
+        api: "/",
+        message: "Error fetching from redirect_urls table",
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+    } catch (logError) {
+      console.error("Failed to insert into error_logs table:", logError);
+    }
+    return res.redirect(fallbackUrl);
   }
     
     if (!url) {
-      alert("Please enter a URL.");
-      return;
+      return res.redirect(fallbackUrl);
     }
 
     let urlVisitedRecord;
@@ -122,25 +144,22 @@ app.get("/", async (req, res) => {
           campaign_id: campaignId,
         });
       } catch (error) {
+
         console.error("Error inserting into client details table:", error);
-        return res.status(500).send("Error inserting into client details table");
+        try {
+          await ErrorLog.create({
+            api: "/",
+            message: "Error inserting into client details table",
+            error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+          });
+        } catch (logError) {
+          console.error("Failed to insert into error_logs table:", logError);
+        }
+        return res.redirect(fallbackUrl);
+
       }
 
-      let urls;
-      try {
-        urls = await SelfRedirectingUrl.findAll({
-          attributes: ["url"],
-        });
-      } catch (error) {
-        console.error("Error fetching self_redirecting_urls:", error);
-        return res.status(500).send("Error fetching self_redirecting_urls");
-      }
-    
-        if (urls.length !== 0) {
-          const randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
-          console.log(`Referer is null. Redirecting to: ${randomUrl}`);
-          return res.redirect(randomUrl);
-        }
+      return res.redirect(fallbackUrl);
     }
 
 
@@ -153,21 +172,21 @@ app.get("/", async (req, res) => {
         }
       });
     } catch (error) {
-      return res.status(500).send("Database error: Error checking existing records");
+      try {
+        await ErrorLog.create({
+          api: "/",
+          message: "Error finding from day_visits table",
+          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      } catch (logError) {
+        console.error("Failed to insert into error_logs table:", logError);
+      }
+
+      return res.redirect(fallbackUrl);
     }
 
       if (urlVisitedRecord) {
-        console.log("User already visited this URL today.");
-        let urls;
-        try {
-          urls = await SelfRedirectingUrl.findAll({
-            attributes: ["url"],
-          });
-        } catch (error) {
-          console.error("Error fetching self_redirecting_urls:", error);
-          return res.status(500).send("Error fetching self_redirecting_urls");
-        }
-
+        console.log("already visited");
         clientIp = req.headers["x-forwarded-for"] || null;
 
         try {
@@ -181,18 +200,21 @@ app.get("/", async (req, res) => {
             campaign_id: campaignId,
           });
         } catch (error) {
-          console.error("Error inserting into client details table:", error);
-          return res.status(500).send("Error inserting into client details table");
+          console.error("Failed to insert into client_details:", error);
+          try {
+            await ErrorLog.create({
+              api: "/",
+              message: "Error inserting into client_details table",
+              error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+            });
+          } catch (logError) {
+            console.error("Failed to insert into error_logs table:", logError);
+          }
+
+          return res.redirect(fallbackUrl);
         }
       
-        if (urls.length !== 0) {
-          let randomUrl = urls[Math.floor(Math.random() * urls.length)].url;
-          console.log(`User already used this redirect URL today. Redirecting to: ${randomUrl}`);
-          if (queryString) {
-            randomUrl += (randomUrl.includes("?") ? "&" : "?") + queryString;
-          }
-          return res.redirect(randomUrl);
-        }
+        return res.redirect(fallbackUrl);
       }
 
     try {
@@ -201,8 +223,17 @@ app.get("/", async (req, res) => {
         client_ip: clientIp
       });
     } catch (error) {
-      console.error("Error inserting into day visits table:", error);
-      return res.status(500).send("Error inserting into day visits table");
+      try {
+        await ErrorLog.create({
+          api: "/",
+          message: "Error inserting into day_visits table",
+          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      } catch (logError) {
+        console.error("Failed to insert into error_logs table:", logError);
+      }
+
+      return res.redirect(fallbackUrl);
     }
     
     clientIp = req.headers["x-forwarded-for"] || null;
@@ -221,7 +252,18 @@ app.get("/", async (req, res) => {
       });
     } catch (error) {
       console.error("Error inserting into client details table:", error);
-      return res.status(500).send("Error inserting into client details table");
+
+      try {
+        await ErrorLog.create({
+          api: "/",
+          message: "Error inserting into client details table",
+          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      } catch (logError) {
+        console.error("Failed to insert into error_logs table:", logError);
+      }
+
+      return res.redirect(fallbackUrl);
     }
 
     if (queryString) {
