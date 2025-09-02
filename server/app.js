@@ -335,6 +335,10 @@ app.get("/api/report", async (req, res) => {
   }
 });
 
+app.get("/headers", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "headers.html"));
+});
+
 // Serve react build folder
 app.use(express.static(path.join(__dirname, "../client/build")));
 
