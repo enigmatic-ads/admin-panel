@@ -9,6 +9,7 @@ const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog } = re
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx');
+const { fail } = require('assert');
 
 const PORT = process.env.PORT || 4000;
 
@@ -132,7 +133,7 @@ app.get("/", async (req, res) => {
 
     // If referer is null, redirect to a random self-redirecting URL
     if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
-      clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
+      clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
       try {
         await ClientDetail.create({
           url_id: id,
@@ -141,6 +142,7 @@ app.get("/", async (req, res) => {
           user_agent: userAgent,
           referer: referer,
           failure: true,
+          failure_reason: "null referer",
           campaign_id: campaignId,
         });
       } catch (error) {
@@ -168,7 +170,7 @@ app.get("/", async (req, res) => {
       urlVisitedRecord = await DayVisit.findOne({
         where: {
           campaign_id: campaignId,
-          client_ip: clientIp,
+          client_ip: clientIp || remoteIp || null,
         }
       });
     } catch (error) {
@@ -187,7 +189,7 @@ app.get("/", async (req, res) => {
 
       if (urlVisitedRecord) {
         console.log("already visited");
-        clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
+        clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
 
         try {
           await ClientDetail.create({
@@ -197,6 +199,7 @@ app.get("/", async (req, res) => {
             user_agent: userAgent,
             referer: referer,
             failure: true,
+            failure_reason: "already visited today",
             campaign_id: campaignId,
           });
         } catch (error) {
@@ -220,7 +223,7 @@ app.get("/", async (req, res) => {
     try {
       await DayVisit.create({
         campaign_id: campaignId,
-        client_ip: clientIp
+        client_ip: clientIp || remoteIp,
       });
     } catch (error) {
       try {
@@ -236,7 +239,7 @@ app.get("/", async (req, res) => {
       return res.redirect(fallbackUrl);
     }
     
-    clientIp = req.headers["x-forwarded-for"].split(",").pop().trim() || null;
+    clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
     
     let redirectUrl = url.dataValues.redirect_url;
 
