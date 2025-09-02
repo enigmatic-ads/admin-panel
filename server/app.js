@@ -30,6 +30,22 @@ app.use(cors({ origin: process.env.REACT_APP_URL, credentials: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/api/headers", async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.status(200).send(
+    JSON.stringify(
+      {
+        message: "Request Headers",
+        headers: req.headers,
+        xForwardedFor: req.headers["x-forwarded-for"] || null,
+        remoteAddress: req.socket.remoteAddress.replace(/^::ffff:/, "") || null,
+        referer: req.headers.referer || req.headers.referrer || null,
+      },
+      null,
+      2
+    )
+  );
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api', encryptUrlRoutes);
