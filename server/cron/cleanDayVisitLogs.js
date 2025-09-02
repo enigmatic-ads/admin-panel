@@ -5,7 +5,7 @@ const { sequelize } = require("../models");
 
 const cleanDayVisitLogs = () => {
     cron.schedule(
-      "0 12 * * *",
+      "0 0 * * *",
     // "* * * * *",
       async () => {
         const currentTime = moment().tz("UTC").format();
