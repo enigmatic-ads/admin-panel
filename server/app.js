@@ -276,22 +276,22 @@ app.get("/", async (req, res) => {
 
 app.get("/api/download-all-encrypted-urls", async (req, res) => {
   try {
-      const records = await RedirectUrl.findAll({ attributes: ["id", "redirect_url", "created_at"] });
+      const records = await RedirectUrl.findAll({ attributes: ["campaign_id", "id", "redirect_url", "created_at"] });
 
       if (!records.length) {
           return res.status(404).send("No records found.");
       }
 
-      let data = [["ID", "Original URL", "Generated Redirect URL", "Created Date"]];
+      let data = [["Campaign ID", "URL ID", "Original URL", "Encrypted URL", "Created Date"]];
 
       records.forEach(record => {
           const date = new Date(record.created_at);
-          data.push([record.id, record.redirect_url, `${process.env.BASE_URL}/?id=${record.id}`, date]);
+          data.push([record.campaign_id, record.id, record.redirect_url, `${process.env.BASE_URL}/?id=${record.id}&campId=${record.campaign_id}`, date]);
       });
 
       const worksheet = xlsx.utils.aoa_to_sheet(data);
       const workbook = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(workbook, worksheet, "RedirectURLs");
+      xlsx.utils.book_append_sheet(workbook, worksheet, "EncryptedURLs");
 
       const filePath = path.join(__dirname, "public", "redirect_urls.xlsx");
       xlsx.writeFile(workbook, filePath);
