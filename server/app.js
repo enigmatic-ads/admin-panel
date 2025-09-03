@@ -290,7 +290,7 @@ app.get("/api/download-all-encrypted-urls", async (req, res) => {
       );
 
       if (!records.length) {
-          return res.status(404).send("No records found.");
+          return res.status(404).json({ error: "No records found" });
       }
 
       let data = [["Campaign ID", "URL ID", "Original URL", "Encrypted URL", "Created Date"]];

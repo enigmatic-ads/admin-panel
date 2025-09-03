@@ -19,6 +19,7 @@ export default function Encrypt() {
   const [source, setSource] = useState("");
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [modalCampaignId, setModalCampaignId] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -138,15 +139,28 @@ export default function Encrypt() {
     setSource("");
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    setErrorMessage("");
     const baseUrl = `${process.env.REACT_APP_BACKEND_BASE_URL}/api/download-all-encrypted-urls`;
     const url = modalCampaignId
       ? `${baseUrl}?campaignId=${modalCampaignId}`
       : baseUrl;
 
-    window.location.href = url;
-    setShowDownloadModal(false);
-    setModalCampaignId("");
+    try {
+      const response = await fetch(url);
+
+      if (response.headers.get("content-type")?.includes("application/json")) {
+        const data = await response.json();
+        setErrorMessage(data.error || "Something went wrong.");
+        return;
+      }
+
+      window.location.href = url;
+      setShowDownloadModal(false);
+      setModalCampaignId("");
+    } catch (err) {
+      setErrorMessage("Network error. Please try again.");
+    }
   };
 
   return (
@@ -291,7 +305,7 @@ export default function Encrypt() {
       {/* Modal */}
         {showDownloadModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Download Encrypted URLs</h2>
                 <button onClick={() => setShowDownloadModal(false)}>
@@ -317,6 +331,9 @@ export default function Encrypt() {
                     className="w-full p-2 border rounded-lg focus:outline-none"
                   />
                 </div>
+                {errorMessage && (
+                  <p className="text-red-600 text-sm text-left">{errorMessage}</p>
+                )}
                 <button
                   onClick={handleDownload}
                   disabled={!modalCampaignId}
