@@ -13,17 +13,23 @@ const xlsx = require('xlsx');
 const PORT = process.env.PORT || 4000;
 
 const app = express();
-const sequelize = new Sequelize(process.env.DATABASE_URL, { 
+const dbUrl = process.env.DATABASE_URL;
+
+// Mask password before logging
+const safeDbUrl = dbUrl.replace(/:\/\/(.*):(.*)@/, '://$1:****@');
+console.log(`Connecting to DB: ${safeDbUrl}`);
+
+const sequelize = new Sequelize(dbUrl, { 
   dialect: "postgres",
   timezone: 'UTC',
- });
+});
 
- sequelize.authenticate()
+sequelize.authenticate()
   .then(() => {
-    console.log('Database connection has been established successfully.');
+    console.log(`✅ Database connection established: ${safeDbUrl}`);
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err);
+    console.error(`❌ Unable to connect to the database: ${safeDbUrl}`, err);
   });
 
 app.use(cors());
