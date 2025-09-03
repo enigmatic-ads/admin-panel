@@ -113,7 +113,7 @@ export default function Encrypt() {
 
   const handleDownloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      resultUrls.map((url, index) => ({ SNo: index + 1, URL: url }))
+      resultUrls.map((item, index) => ({ SNo: index + 1, URL: item.url, Keyword: item.keyword }))
     );
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Encrypted URLs");
@@ -125,11 +125,6 @@ export default function Encrypt() {
 
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(data, "encrypted_urls.xlsx");
-  };
-
-  const handleDownloadAll = () => {
-    window.location.href =
-      `${process.env.REACT_APP_BACKEND_BASE_URL}/api/download-all-encrypted-urls`;
   };
 
   const handleReset = () => {
