@@ -318,6 +318,10 @@ app.get("/api/report", async (req, res) => {
       return res.status(400).json({ error: "Missing required parameters" });
     }
 
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const startUtc = new Date(new Date(startDate + 'T00:00:00').getTime() - istOffsetMs).toISOString().replace('T', ' ').replace('Z', '');
+    const endUtc = new Date(new Date(endDate + 'T23:59:59').getTime() - istOffsetMs).toISOString().replace('T', ' ').replace('Z', '');
+
     let finalCampaignId = campaignId;
 
     // If urlId is provided, resolve its campaignId
@@ -356,7 +360,7 @@ app.get("/api/report", async (req, res) => {
       ORDER BY r.campaign_id, cd.url_id;
       `,
       {
-        replacements: { startDate, endDate, finalCampaignId },
+        replacements: { startUtc, endUtc, finalCampaignId },
         type: QueryTypes.SELECT,
       }
     );
