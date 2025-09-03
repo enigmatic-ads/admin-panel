@@ -9,7 +9,6 @@ const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog } = re
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx');
-const { fail } = require('assert');
 
 const PORT = process.env.PORT || 4000;
 
@@ -166,7 +165,7 @@ app.get("/", async (req, res) => {
 
 
     try {
-      // Check if the same IP and URL ID already exist in today's records
+      // Check if the same IP and Campaign ID already exist in today's records
       urlVisitedRecord = await DayVisit.findOne({
         where: {
           campaign_id: campaignId,
