@@ -1,0 +1,42 @@
+name: Deploy admin-panel to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/github-actions
+          chmod 600 ~/.ssh/github-actions
+          ssh-keyscan -H ec2-43-205-167-99.ap-south-1.compute.amazonaws.com >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          ssh -i ~/.ssh/github-actions ubuntu@ec2-43-205-167-99.ap-south-1.compute.amazonaws.com << 'EOF'
+            set -e
+            cd ~/admin-panel
+            git pull origin main
+
+            # Build client
+            cd client
+            npm install
+            npm run build
+
+            # Server setup + migrations
+            cd ../server
+            npm install
+            npx sequelize-cli db:migrate
+
+            # Restart Node server with PM2
+            pm2 reload admin-panel || pm2 start app.js --name admin-panel
+          EOF
