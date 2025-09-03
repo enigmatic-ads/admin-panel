@@ -3,7 +3,7 @@ import UrlInput from "./components/UrlInput";
 import EncyptedUrlResultBox from "./components/EncryptedUrlResultBox";
 import KeywordsInput from "./components/KeywordsInput";
 import Card from "components/card";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -17,6 +17,8 @@ export default function Encrypt() {
   const [showResults, setShowResults] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [source, setSource] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [modalCampaignId, setModalCampaignId] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -141,19 +143,75 @@ export default function Encrypt() {
     setSource("");
   };
 
+  const handleDownload = () => {
+    const baseUrl = `${process.env.REACT_APP_BACKEND_BASE_URL}/api/download-all-encrypted-urls`;
+    const url = modalCampaignId
+      ? `${baseUrl}?campaignId=${modalCampaignId}`
+      : baseUrl;
+
+    window.location.href = url;
+    setShowDownloadModal(false);
+    setModalCampaignId("");
+  };
+
   return (
     <div className="flex justify-center min-h-screen bg-gray-50">
       <Card extra={"w-full max-w-4xl h-full sm:overflow-auto px-10 py-8 mt-12"}>
         {/* Download link in top-right */}
         <div className="absolute top-4 right-6">
           <button
-            onClick={handleDownloadAll}
+            onClick={() => setShowDownloadModal(true)}
             className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 text-sm font-medium"
           >
             <Download className="w-4 h-4" />
             <span>Download all encrypted URLs</span>
           </button>
         </div>
+
+        {/* Modal */}
+        {showDownloadModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Download Encrypted URLs</h2>
+                <button onClick={() => setShowDownloadModal(false)}>
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <button
+                  onClick={handleDownload}
+                  className="w-full bg-brand-600 text-white py-2 px-4 rounded-lg hover:bg-brand-700"
+                >
+                  Download All
+                </button>
+                <div>
+                  <label className="block text-gray-700 text-sm mb-2">
+                    Or enter Campaign ID
+                  </label>
+                  <input
+                    type="text"
+                    value={modalCampaignId}
+                    onChange={(e) => setModalCampaignId(e.target.value)}
+                    placeholder="Campaign ID"
+                    className="w-full p-2 border rounded-lg focus:outline-none"
+                  />
+                </div>
+                <button
+                  onClick={handleDownload}
+                  disabled={!modalCampaignId}
+                  className={`w-full py-2 px-4 rounded-lg text-white ${
+                    modalCampaignId
+                      ? "bg-brand-600 hover:bg-brand-700"
+                      : "bg-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  Download by Campaign ID
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col items-center p-6 w-full max-w-3xl mx-auto space-y-6">
           {/* URL Input */}

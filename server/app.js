@@ -279,7 +279,15 @@ app.get("/", async (req, res) => {
 
 app.get("/api/download-all-encrypted-urls", async (req, res) => {
   try {
-      const records = await RedirectUrl.findAll({ attributes: ["campaign_id", "id", "redirect_url", "created_at"] });
+      const { campaignId } = req.query;
+      let condition = campaignId ? { campaign_id: campaignId } : {};
+
+      const records = await RedirectUrl.findAll(
+        { 
+          attributes: ["campaign_id", "id", "redirect_url", "created_at"],
+          where: condition,
+        }
+      );
 
       if (!records.length) {
           return res.status(404).send("No records found.");
