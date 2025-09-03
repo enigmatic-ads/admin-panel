@@ -24,7 +24,6 @@ export default function Reports() {
   useEffect(() => {
     const today = new Date();
     const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
 
     const formatDate = (date) => date.toISOString().split("T")[0];
     const start = formatDate(today);
@@ -62,7 +61,6 @@ export default function Reports() {
     if (campaignId) params.append("campaignId", campaignId);
     if (urlId) params.append("urlId", urlId);
 
-    // ✅ Always prefer function args if present
     if (start && end) {
       params.append("startDate", start);
       params.append("endDate", end);
@@ -106,7 +104,6 @@ export default function Reports() {
     if (checked) {
       const today = new Date();
       const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
       const formatDate = (date) => date.toISOString().split("T")[0];
       setFromDate(formatDate(today));
       setToDate(formatDate(tomorrow));
