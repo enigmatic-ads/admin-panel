@@ -354,7 +354,7 @@ app.get("/api/report", async (req, res) => {
           SUM(CASE WHEN cd.failure = true THEN 1 ELSE 0 END) as "failedHits"
       FROM client_details cd
       JOIN redirect_urls r ON cd.url_id = r.id
-      WHERE cd.created_at BETWEEN :startDate AND :endDate AND r.campaign_id IS NOT NULL
+      WHERE cd.created_at BETWEEN :startUtc AND :endUtc AND r.campaign_id IS NOT NULL
       ${condition}
       GROUP BY r.campaign_id, cd.url_id, r.redirect_url
       ORDER BY r.campaign_id, cd.url_id;
