@@ -63,7 +63,7 @@ export default function Encrypt() {
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/generate-encrypted-url`,
+        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/encrypt-url/generate`,
         {
           method: "POST",
           headers: {
@@ -105,8 +105,8 @@ export default function Encrypt() {
         document.body.removeChild(input);
       }
 
-      setCopiedUrl(url); // mark as copied
-      setTimeout(() => setCopiedUrl(null), 2000); // reset after 2 sec
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -141,7 +141,7 @@ export default function Encrypt() {
 
   const handleDownload = async () => {
     setErrorMessage("");
-    const baseUrl = `${process.env.REACT_APP_BACKEND_BASE_URL}/api/download-all-encrypted-urls`;
+    const baseUrl = `${process.env.REACT_APP_BACKEND_BASE_URL}/api/encrypt-url/download-all`;
     const url = modalCampaignId
       ? `${baseUrl}?campaignId=${modalCampaignId}`
       : baseUrl;
