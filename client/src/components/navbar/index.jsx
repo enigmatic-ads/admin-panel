@@ -27,7 +27,6 @@ const Navbar = (props) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    const token = localStorage.getItem("token");
     navigate("/auth/sign-in");
   };
   
