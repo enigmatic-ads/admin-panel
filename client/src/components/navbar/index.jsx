@@ -175,10 +175,10 @@ const Navbar = (props) => {
           className="cursor-pointer text-gray-600"
           onClick={() => {
             if (darkmode) {
-              document.body.classList.remove("dark");
+              document.documentElement.classList.remove("dark");
               setDarkmode(false);
             } else {
-              document.body.classList.add("dark");
+              document.documentElement.classList.add("dark");
               setDarkmode(true);
             }
           }}
@@ -191,47 +191,45 @@ const Navbar = (props) => {
         </div>
         {/* Profile & Dropdown */}
         <Dropdown
-        button={
-          <img
-            className="h-10 w-10 rounded-full"
-            src={avatar}
-            alt="Elon Musk"
-          />
-        }
-        children={
-          <div className="flex w-56 flex-col justify-start rounded-[20px] bg-white bg-cover bg-no-repeat shadow-xl shadow-shadow-500 dark:!bg-navy-700 dark:text-white dark:shadow-none">
-            <div className="p-4">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-navy-700 dark:text-white">
-                  👋 Hey, { username }
-                </p>
+          button={
+            <img
+              className="h-10 w-10 rounded-full"
+              src={avatar}
+              alt="Elon Musk"
+            />
+          }
+          children={
+            <div className="flex w-56 flex-col justify-start rounded-[20px] bg-white bg-cover bg-no-repeat shadow-xl shadow-shadow-500 dark:!bg-navy-700 dark:text-white dark:shadow-none">
+              <div className="p-4">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-navy-700 dark:text-white">
+                    👋 Hey, {username}
+                  </p>
+                </div>
+              </div>
+              <div className="h-px w-full bg-gray-200 dark:bg-white/20 " />
+
+              <div className="flex flex-col p-4">
+                <button
+                  className="text-left text-sm text-gray-800 dark:text-white"
+                  onClick={() => navigate("/profile")}
+                >
+                  Profile Settings
+                </button>
+                <button className="mt-3 text-left text-sm text-gray-800 dark:text-white">
+                  Newsletter Settings
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="mt-3 text-left text-sm font-medium text-red-500 transition duration-150 ease-out hover:text-red-600 hover:ease-in"
+                >
+                  Log Out
+                </button>
               </div>
             </div>
-            <div className="h-px w-full bg-gray-200 dark:bg-white/20 " />
-
-            <div className="flex flex-col p-4">
-              <button
-                className="text-sm text-gray-800 dark:text-white text-left"
-                onClick={() => navigate("/profile")}
-              >
-                Profile Settings
-              </button>
-              <button
-                className="mt-3 text-sm text-gray-800 dark:text-white text-left"
-              >
-                Newsletter Settings
-              </button>
-              <button
-                onClick={handleLogout}
-                className="mt-3 text-sm font-medium text-red-500 hover:text-red-600 transition duration-150 ease-out hover:ease-in text-left"
-              >
-                Log Out
-              </button>
-            </div>
-          </div>
-        }
-        classNames={"py-2 top-8 -left-[180px] w-max"}
-      />
+          }
+          classNames={"py-2 top-8 -left-[180px] w-max"}
+        />
       </div>
     </nav>
   );
