@@ -1,4 +1,7 @@
 const { RedirectUrl } = require("../models");
+const path = require('path');
+const fs = require('fs');
+const xlsx = require('xlsx');
 
 const generateEncryptedURL = async (req, res) => {
   try {
@@ -47,5 +50,45 @@ const generateEncryptedURL = async (req, res) => {
   }
 };
 
+const downloadEncryptedUrls = async (req, res) => {
+  try {
+      const { campaignId } = req.query;
+      let condition = campaignId ? { campaign_id: campaignId } : {};
 
-module.exports = { generateEncryptedURL };
+      const records = await RedirectUrl.findAll(
+        { 
+          attributes: ["campaign_id", "id", "redirect_url", "created_at"],
+          where: condition,
+        }
+      );
+
+      if (!records.length) {
+          return res.status(404).json({ error: "No records found" });
+      }
+
+      let data = [["Campaign ID", "URL ID", "Original URL", "Encrypted URL", "Created Date"]];
+
+      records.forEach(record => {
+          const date = new Date(record.created_at);
+          data.push([record.campaign_id, record.id, record.redirect_url, `${process.env.BASE_URL}/?id=${record.id}&campId=${record.campaign_id}`, date]);
+      });
+
+      const worksheet = xlsx.utils.aoa_to_sheet(data);
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "EncryptedURLs");
+
+      const filePath = path.join(__dirname, "../public", "redirect_urls.xlsx");
+      xlsx.writeFile(workbook, filePath);
+
+      res.download(filePath, "redirect_urls.xlsx", (err) => {
+          if (err) console.error(err);
+          fs.unlinkSync(filePath);
+      });
+
+  } catch (error) {
+      console.error("Error fetching data:", error);
+      res.status(500).send("Error generating file.");
+  }
+};
+
+module.exports = { generateEncryptedURL, downloadEncryptedUrls };
