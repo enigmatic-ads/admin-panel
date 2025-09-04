@@ -164,94 +164,94 @@ export default function Encrypt() {
   };
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-50">
-      <Card extra={"w-full max-w-4xl h-full sm:overflow-auto px-10 py-8 mt-12"}>
-        {/* Download link in top-right */}
-        <div className="absolute top-4 right-6">
-          <button
-            onClick={() => setShowDownloadModal(true)}
-            className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 text-sm font-medium"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download all encrypted URLs</span>
-          </button>
+  <div className="flex justify-center min-h-screen bg-gray-50 dark:bg-navy-900">
+    <Card extra="w-full max-w-4xl h-full sm:overflow-auto px-10 py-8 mt-12 bg-white dark:bg-navy-800 dark:text-white">
+      {/* Download link in top-right */}
+      <div className="absolute top-4 right-6">
+        <button
+          onClick={() => setShowDownloadModal(true)}
+          className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 dark:text-white dark:hover:text-brand-300 text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          <span>Download all encrypted URLs</span>
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center p-6 w-full max-w-3xl mx-auto space-y-6">
+        {/* URL Input */}
+        <div className="w-full">
+          <label className="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+            Enter URL
+          </label>
+          <UrlInput
+            inputUrl={inputUrl}
+            setInputUrl={setInputUrl}
+            className="w-full"
+          />
+          {errors.inputUrl && (
+            <p className="text-red-600 text-sm mt-1">{errors.inputUrl}</p>
+          )}
         </div>
 
-        <div className="flex flex-col items-center p-6 w-full max-w-3xl mx-auto space-y-6">
-          {/* URL Input */}
-          <div className="w-full">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Enter URL
-            </label>
-            <UrlInput
-              inputUrl={inputUrl}
-              setInputUrl={setInputUrl}
-              className="w-full"
+        {/* Keywords Input */}
+        <div className="w-full">
+          <label className="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+            Enter Keywords
+          </label>
+          <KeywordsInput
+            keywords={keywords}
+            setKeywords={setKeywords}
+            className="w-full"
+          />
+          {errors.keywords && (
+            <p className="text-red-600 text-sm mt-1">{errors.keywords}</p>
+          )}
+        </div>
+
+        {/* Campaign ID Input */}
+        <div className="w-full">
+          <label className="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+            Enter Campaign ID
+          </label>
+          <div className="flex w-full mb-4">
+            <input
+              type="text"
+              value={campaignId}
+              onChange={(e) => setCampaignId(e.target.value)}
+              className="flex-1 p-2 border rounded-l-lg focus:outline-none bg-white dark:bg-navy-900 dark:text-gray-100 dark:border-navy-600"
+              placeholder="Campaign ID"
             />
-            {errors.inputUrl && (
-              <p className="text-red-600 text-sm mt-1">{errors.inputUrl}</p>
-            )}
           </div>
+          {errors.campaignId && (
+            <p className="text-red-600 text-sm mt-1">{errors.campaignId}</p>
+          )}
+        </div>
 
-          {/* Keywords Input */}
-          <div className="w-full">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Enter Keywords
-            </label>
-            <KeywordsInput
-              keywords={keywords}
-              setKeywords={setKeywords}
-              className="w-full"
-            />
-            {errors.keywords && (
-              <p className="text-red-600 text-sm mt-1">{errors.keywords}</p>
-            )}
-          </div>
+        {/* Source Dropdown */}
+        <div className="w-full">
+          <label className="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+            Select Source
+          </label>
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            className="w-full p-2 border rounded-lg focus:outline-none bg-white dark:bg-navy-900 dark:text-gray-100 dark:border-navy-600"
+          >
+            <option value="">-- Select Source --</option>
+            <option value="Outbrain">Outbrain</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Taboola">Taboola</option>
+          </select>
+          {errors.source && (
+            <p className="text-red-600 text-sm mt-1">{errors.source}</p>
+          )}
+        </div>
 
-          {/* Campaign ID Input */}
-          <div className="w-full">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Enter Campaign ID
-            </label>
-            <div className="flex w-full mb-4">
-              <input
-                type="text"
-                value={campaignId}
-                onChange={(e) => setCampaignId(e.target.value)}
-                className="flex-1 p-2 border rounded-l-lg focus:outline-none"
-                placeholder="Campaign ID"
-              />
-            </div>
-            {errors.campaignId && (
-              <p className="text-red-600 text-sm mt-1">{errors.campaignId}</p>
-            )}
-          </div>
-
-          {/* Source Dropdown */}
-          <div className="w-full">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Select Source
-            </label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              className="w-full p-2 border rounded-lg focus:outline-none"
-            >
-              <option value="">-- Select Source --</option>
-              <option value="Outbrain">Outbrain</option>
-              <option value="Facebook">Facebook</option>
-              <option value="Taboola">Taboola</option>
-            </select>
-            {errors.source && (
-              <p className="text-red-600 text-sm mt-1">{errors.source}</p>
-            )}
-          </div>
-
-          {/* Generate + Reset */}
+        {/* Generate + Reset */}
           <div className="flex items-center space-x-4 mb-4">
             <button
               onClick={handleGenerate}
-              className="linear rounded-[20px] bg-brand-900 px-6 py-3 text-lg font-medium text-white transition duration-200 hover:bg-brand-700 active:bg-brand-700"
+              className="linear rounded-[20px] bg-brand-900 px-6 py-3 text-lg font-medium text-white transition duration-200 hover:bg-brand-700 active:bg-brand-700 dark:bg-brand-400 dark:hover:bg-brand-300 dark:active:opacity-90"
             >
               Generate
             </button>
@@ -259,7 +259,7 @@ export default function Encrypt() {
             {showButtons && (
               <button
                 onClick={handleReset}
-                className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                className="text-gray-600 hover:text-gray-800 text-sm font-medium dark:text-white dark:hover:text-brand-300"
               >
                 Reset
               </button>
@@ -271,14 +271,14 @@ export default function Encrypt() {
             <div className="mt-4 flex items-center space-x-6">
               <button
                 onClick={handleDownloadExcel}
-                className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 text-sm font-medium"
+                className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 dark:text-white dark:hover:text-brand-300 text-sm font-medium"
               >
                 <Download className="w-4 h-4" />
                 <span>Download results as Excel</span>
               </button>
               <button
                 onClick={() => setShowResults(true)}
-                className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 text-sm font-medium"
+                className="flex items-center space-x-1 text-brand-600 hover:text-brand-800 dark:text-white dark:hover:text-brand-300 text-sm font-medium"
               >
                 <span>Show Results Here</span>
               </button>
@@ -299,56 +299,58 @@ export default function Encrypt() {
               ))}
             </div>
           )}
-        </div>
-      </Card>
+      </div>
+    </Card>
 
-      {/* Modal */}
-        {showDownloadModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Download Encrypted URLs</h2>
-                <button onClick={() => setShowDownloadModal(false)}>
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <button
-                  onClick={handleDownload}
-                  className="w-full bg-brand-600 text-white py-2 px-4 rounded-lg hover:bg-brand-700"
-                >
-                  Download All
-                </button>
-                <div>
-                  <label className="block text-gray-700 text-sm mb-2">
-                    Enter Campaign ID
-                  </label>
-                  <input
-                    type="text"
-                    value={modalCampaignId}
-                    onChange={(e) => setModalCampaignId(e.target.value)}
-                    placeholder="Campaign ID"
-                    className="w-full p-2 border rounded-lg focus:outline-none"
-                  />
-                </div>
-                {errorMessage && (
-                  <p className="text-red-600 text-sm text-left">{errorMessage}</p>
-                )}
-                <button
-                  onClick={handleDownload}
-                  disabled={!modalCampaignId}
-                  className={`w-full py-2 px-4 rounded-lg text-white ${
-                    modalCampaignId
-                      ? "bg-brand-600 hover:bg-brand-700"
-                      : "bg-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Download by Campaign ID
-                </button>
-              </div>
-            </div>
+    {/* Modal */}
+    {showDownloadModal && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+        <div className="bg-white dark:bg-navy-800 rounded-lg shadow-2xl p-6 w-full max-w-md dark:text-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Download Encrypted URLs</h2>
+            <button onClick={() => setShowDownloadModal(false)}>
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-200" />
+            </button>
           </div>
-        )}
-    </div>
-  );
+          <div className="space-y-4">
+            <button
+              onClick={handleDownload}
+              className="w-full bg-brand-600 text-white py-2 px-4 rounded-lg hover:bg-brand-700"
+            >
+              Download All
+            </button>
+            <div>
+              <label className="block text-gray-700 dark:text-gray-200 text-sm mb-2">
+                Enter Campaign ID
+              </label>
+              <input
+                type="text"
+                value={modalCampaignId}
+                onChange={(e) => setModalCampaignId(e.target.value)}
+                placeholder="Campaign ID"
+                className="w-full p-2 border rounded-lg focus:outline-none bg-white dark:bg-navy-700 dark:text-white dark:border-gray-600"
+              />
+            </div>
+            {errorMessage && (
+              <p className="text-red-600 text-sm text-left">{errorMessage}</p>
+            )}
+            <button
+              onClick={handleDownload}
+              disabled={!modalCampaignId}
+              className={`w-full py-2 px-4 rounded-lg text-white ${
+                modalCampaignId
+                  ? "bg-brand-600 hover:bg-brand-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Download by Campaign ID
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+
 }

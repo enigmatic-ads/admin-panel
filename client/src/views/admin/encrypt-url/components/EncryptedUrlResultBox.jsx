@@ -18,7 +18,7 @@ export default function EncyptedUrlResultBox({ resultUrl, keyword, handleCopy, i
           type="text"
           value={resultUrl}
           readOnly
-          className="flex-1 p-2 border rounded-l-lg bg-gray-100"
+          className="flex-1 p-2 border rounded-l-lg bg-gray-100 dark:bg-navy-900 dark:text-gray-100 dark:border-navy-600"
         />
         <button
           onClick={handleCopy}

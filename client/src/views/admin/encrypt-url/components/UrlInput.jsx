@@ -6,7 +6,7 @@ export default function UrlInput({ inputUrl, setInputUrl }) {
         value={inputUrl}
         onChange={(e) => setInputUrl(e.target.value)}
         placeholder="URL"
-        className="flex-1 p-2 border rounded-l-lg focus:outline-none"
+        className="flex-1 p-2 border rounded-lg focus:outline-none dark:bg-navy-900 dark:text-gray-100 dark:border-navy-600"
       />
     </div>
   );
