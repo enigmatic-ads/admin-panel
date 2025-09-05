@@ -5,7 +5,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   timezone: 'UTC',
 });
 
-const generateReport =  async (req, res) => {
+const generateReport = async (req, res) => {
   const { startDate, endDate, campaignId, urlId } = req.query;
 
   try {
@@ -14,8 +14,14 @@ const generateReport =  async (req, res) => {
     }
 
     const istOffsetMs = 5.5 * 60 * 60 * 1000;
-    const startUtc = new Date(new Date(startDate + 'T00:00:00').getTime() - istOffsetMs).toISOString().replace('T', ' ').replace('Z', '');
-    const endUtc = new Date(new Date(endDate + 'T23:59:59').getTime() - istOffsetMs).toISOString().replace('T', ' ').replace('Z', '');
+    const startUtc = new Date(new Date(startDate + 'T00:00:00').getTime() - istOffsetMs)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', '');
+    const endUtc = new Date(new Date(endDate + 'T23:59:59').getTime() - istOffsetMs)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', '');
 
     let finalCampaignId = campaignId;
 
@@ -38,6 +44,7 @@ const generateReport =  async (req, res) => {
       condition = "AND r.campaign_id = :finalCampaignId";
     }
 
+    //Now grouping by failure_reason too
     const rows = await sequelize.query(
       `
       SELECT 
@@ -46,12 +53,14 @@ const generateReport =  async (req, res) => {
           r.redirect_url,
           COUNT(*) as "totalHits",
           SUM(CASE WHEN cd.failure = false THEN 1 ELSE 0 END) as "successHits",
-          SUM(CASE WHEN cd.failure = true THEN 1 ELSE 0 END) as "failedHits"
+          SUM(CASE WHEN cd.failure = true THEN 1 ELSE 0 END) as "failedHits",
+          cd.failure_reason
       FROM client_details cd
       JOIN redirect_urls r ON cd.url_id = r.id
-      WHERE cd.created_at BETWEEN :startUtc AND :endUtc AND r.campaign_id IS NOT NULL
-      ${condition}
-      GROUP BY r.campaign_id, cd.url_id, r.redirect_url
+      WHERE cd.created_at BETWEEN :startUtc AND :endUtc 
+        AND r.campaign_id IS NOT NULL
+        ${condition}
+      GROUP BY r.campaign_id, cd.url_id, r.redirect_url, cd.failure_reason
       ORDER BY r.campaign_id, cd.url_id;
       `,
       {
@@ -62,6 +71,7 @@ const generateReport =  async (req, res) => {
 
     // Group rows into campaigns
     const campaignsMap = {};
+
     rows.forEach(row => {
       if (!campaignsMap[row.campaign_id]) {
         campaignsMap[row.campaign_id] = {
@@ -69,24 +79,42 @@ const generateReport =  async (req, res) => {
           totalHits: 0,
           successHits: 0,
           failedHits: 0,
-          keywordHits: []
+          keywordHits: {}
         };
       }
 
-      campaignsMap[row.campaign_id].totalHits += Number(row.totalHits);
-      campaignsMap[row.campaign_id].successHits += Number(row.successHits);
-      campaignsMap[row.campaign_id].failedHits += Number(row.failedHits);
+      const campaign = campaignsMap[row.campaign_id];
+      campaign.totalHits += Number(row.totalHits);
+      campaign.successHits += Number(row.successHits);
+      campaign.failedHits += Number(row.failedHits);
 
-      campaignsMap[row.campaign_id].keywordHits.push({
-        urlId: row.url_id,
-        url: row.redirect_url,
-        totalHits: row.totalHits,
-        successHits: row.successHits,
-        failedHits: row.failedHits,
-      });
+      if (!campaign.keywordHits[row.url_id]) {
+        campaign.keywordHits[row.url_id] = {
+          urlId: row.url_id,
+          url: row.redirect_url,
+          totalHits: 0,
+          successHits: 0,
+          failedHits: 0,
+          failureReasons: {}
+        };
+      }
+
+      const keyword = campaign.keywordHits[row.url_id];
+      keyword.totalHits += Number(row.totalHits);
+      keyword.successHits += Number(row.successHits);
+      keyword.failedHits += Number(row.failedHits);
+
+      // Add failure_reason breakdown (only for failures)
+      if (row.failure_reason) {
+        keyword.failureReasons[row.failure_reason] =
+          (keyword.failureReasons[row.failure_reason] || 0) + Number(row.failedHits);
+      }
     });
 
-    const result = Object.values(campaignsMap);
+    const result = Object.values(campaignsMap).map(c => ({
+      ...c,
+      keywordHits: Object.values(c.keywordHits)
+    }));
 
     res.json(result);
   } catch (error) {

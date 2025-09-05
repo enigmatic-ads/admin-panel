@@ -11,6 +11,7 @@ export default function Reports() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});  
+  const [expandedUrls, setExpandedUrls] = useState({}); 
 
   // Redirect if no token
   useEffect(() => {
@@ -112,6 +113,13 @@ export default function Reports() {
     setExpandedRows((prev) => ({
       ...prev,
       [campaignId]: !prev[campaignId],
+    }));
+  };
+
+  const toggleExpandUrl = (urlId) => {
+    setExpandedUrls((prev) => ({
+      ...prev,
+      [urlId]: !prev[urlId],
     }));
   };
 
@@ -229,6 +237,7 @@ export default function Reports() {
                   <tbody>
                     {reportData.map((campaign) => (
                       <React.Fragment key={campaign.campaign_id}>
+                        {/* Campaign Row */}
                         <tr
                           onClick={() => toggleExpandRow(campaign.campaign_id)}
                           className="border-t dark:border-navy-600 hover:bg-gray-50 dark:hover:bg-navy-600 transition cursor-pointer"
@@ -239,6 +248,7 @@ export default function Reports() {
                           <td className="px-4 py-2">{campaign.totalHits}</td>
                         </tr>
 
+                        {/* Expanded Campaign → Show URLs */}
                         {expandedRows[campaign.campaign_id] && (
                           <tr>
                             <td colSpan={4} className="p-0">
@@ -246,35 +256,54 @@ export default function Reports() {
                                 <table className="w-full border-collapse text-xs">
                                   <thead>
                                     <tr className="bg-gray-100 dark:bg-navy-600 text-gray-700 dark:text-gray-200">
-                                      <th className="px-4 py-2 text-left">
-                                        URL ID
-                                      </th>
-                                      <th className="px-4 py-2 text-left">
-                                        URL
-                                      </th>
-                                      <th className="px-4 py-2 text-left">
-                                        Successful Hits
-                                      </th>
-                                      <th className="px-4 py-2 text-left">
-                                        Failed Hits
-                                      </th>
-                                      <th className="px-4 py-2 text-left">
-                                        Total Hits
-                                      </th>
+                                      <th className="px-4 py-2 text-left">URL ID</th>
+                                      <th className="px-4 py-2 text-left">URL</th>
+                                      <th className="px-4 py-2 text-left">Successful Hits</th>
+                                      <th className="px-4 py-2 text-left">Failed Hits</th>
+                                      <th className="px-4 py-2 text-left">Total Hits</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {campaign.keywordHits.map((url) => (
-                                      <tr
-                                        key={url.urlId}
-                                        className="border-t dark:border-navy-600 hover:bg-gray-50 dark:hover:bg-navy-600"
-                                      >
-                                        <td className="px-4 py-2">{url.urlId}</td>
-                                        <td className="px-4 py-2">{url.url}</td>
-                                        <td className="px-4 py-2">{url.successHits}</td>
-                                        <td className="px-4 py-2">{url.failedHits}</td>
-                                        <td className="px-4 py-2">{url.totalHits}</td>
-                                      </tr>
+                                      <React.Fragment key={url.urlId}>
+                                        {/* URL Row */}
+                                        <tr
+                                          onClick={() => toggleExpandUrl(url.urlId)}
+                                          className="border-t dark:border-navy-600 hover:bg-gray-50 dark:hover:bg-navy-600 cursor-pointer"
+                                        >
+                                          <td className="px-4 py-2">{url.urlId}</td>
+                                          <td className="px-4 py-2">{url.url}</td>
+                                          <td className="px-4 py-2">{url.successHits}</td>
+                                          <td className="px-4 py-2">{url.failedHits}</td>
+                                          <td className="px-4 py-2">{url.totalHits}</td>
+                                        </tr>
+
+                                        {/* Expanded URL → Show Failure Reasons */}
+                                        {expandedUrls[url.urlId] && (
+                                          <tr>
+                                            <td colSpan={5} className="p-0">
+                                              <div className="bg-gray-100 dark:bg-navy-600 p-3">
+                                                <table className="w-full border-collapse text-xs">
+                                                  <thead>
+                                                    <tr className="bg-gray-200 dark:bg-navy-700 text-gray-700 dark:text-gray-200">
+                                                      <th className="px-4 py-2 text-left">Failure Reason</th>
+                                                      <th className="px-4 py-2 text-left">Count</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody>
+                                                    {Object.entries(url.failureReasons || {}).map(([reason, count]) => (
+                                                      <tr key={reason} className="border-t dark:border-navy-500">
+                                                        <td className="px-4 py-2">{reason}</td>
+                                                        <td className="px-4 py-2">{count}</td>
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </React.Fragment>
                                     ))}
                                   </tbody>
                                 </table>
