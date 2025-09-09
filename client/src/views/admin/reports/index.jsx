@@ -12,6 +12,15 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});  
   const [expandedUrls, setExpandedUrls] = useState({}); 
+  const [insightLevel, setInsightLevel] = useState("adset");
+  const [timeRange, setTimeRange] = useState("last_7d");
+  const [insightsData, setInsightsData] = useState([]);
+  const [insightLevelInput, setInsightLevelInput] = useState("adset");
+  const [timeRangeInput, setTimeRangeInput] = useState("today");
+  const [insightsFromDate, setInsightsFromDate] = useState('');
+  const [insightsToDate, setInsightsToDate] = useState('');
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  
 
   // Redirect if no token
   useEffect(() => {
@@ -35,6 +44,11 @@ export default function Reports() {
     setForToday(true);
 
     handleGetReport(start, end, true);
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    fetchInsights();
     // eslint-disable-next-line
   }, []);
 
@@ -86,6 +100,39 @@ export default function Reports() {
     }
   };
 
+  const fetchInsights = async () => {
+    try {
+      setInsightsLoading(true);
+
+      const params = new URLSearchParams();
+      params.append("level", insightLevelInput);
+
+      if (timeRangeInput === "custom" && insightsFromDate && insightsToDate) {
+        params.append("since", insightsFromDate);
+        params.append("until", insightsToDate);
+      } else {
+        params.append("timeRange", timeRangeInput);
+      }
+
+      const res = await fetch(
+        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/facebook/insights?${params.toString()}`
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        setInsightsData(data.insights);
+        setInsightLevel(insightLevelInput);
+      } else {
+        setInsightsData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching insights:", error);
+      setInsightsData([]);
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setCampaignId("");
     setUrlId("");
@@ -123,14 +170,37 @@ export default function Reports() {
     }));
   };
 
+  const formatCurrency = (value) => {
+    if (!value) return "₹0.00";
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  function roundToTwo(value) {
+    let num = Number(value);
+
+    if (isNaN(num)) {
+      // Try parsing as integer
+      num = parseInt(value, 10);
+    }
+
+    if (isNaN(num)) return 0; // still invalid
+
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+  }
+
   return (
     <div className="flex justify-center min-h-screen bg-gray-50 dark:bg-navy-900">
       <Card extra="w-full max-w-6xl h-full sm:overflow-auto px-10 py-8 mt-12 bg-white dark:bg-navy-800">
-        <div className="flex flex-col items-center p-6 w-full max-w-5xl mx-auto space-y-6">
-          {/* Filters */}
+        <div className="flex flex-col items-center p-6 w-full max-w-5xl mx-auto">
+          {/* Encrypted URLs section */}
           <div className="w-full">
             <h3 className="text-gray-800 dark:text-white font-semibold mb-2">
-              Filters :
+              Encrypted URLs Traffic
             </h3>
             <div className="flex flex-wrap items-end gap-3">
               {/* Campaign ID */}
@@ -318,6 +388,152 @@ export default function Reports() {
               </div>
             </div>
           )}
+
+          {/* Insights Section */}
+          <div className="w-full mt-16">
+            <h3 className="text-gray-800 dark:text-white font-semibold mb-4">
+              Marketing Insights
+            </h3>
+
+            {/* Filters for Insights */}
+            <div className="flex flex-col md:flex-row flex-wrap md:items-end gap-4 mb-4">
+              {/* Level Dropdown */}
+              <div className="flex flex-col w-full md:w-auto">
+                <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
+                  Level
+                </label>
+                <select
+                  value={insightLevelInput}
+                  onChange={(e) => setInsightLevelInput(e.target.value)}
+                  className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                >
+                  <option value="adset">Adset</option>
+                  <option value="campaign">Campaign</option>
+                  <option value="account">Account</option>
+                </select>
+              </div>
+
+              {/* Time Range Dropdown */}
+              <div className="flex flex-col w-full md:w-auto">
+                <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
+                  Time Range
+                </label>
+                <select
+                  value={timeRangeInput}
+                  onChange={(e) => setTimeRangeInput(e.target.value)}
+                  className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                >
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last_7d">Last 7 Days</option>
+                  <option value="last_30d">Last 30 Days</option>
+                  <option value="last_90d">Last 90 Days</option>
+                  <option value="this_month">This Month</option>
+                  <option value="last_month">Last Month</option>
+                  <option value="this_year">This Year</option>
+                  <option value="lifetime">Lifetime</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              {timeRangeInput === "custom" && (
+                <>
+                  {/* From Date */}
+                  <div className="flex flex-col w-full md:w-auto">
+                    <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">From</label>
+                    <input
+                      type="date"
+                      value={insightsFromDate}
+                      onChange={(e) => setInsightsFromDate(e.target.value)}
+                      className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                    />
+                  </div>
+
+                  {/* To Date */}
+                  <div className="flex flex-col w-full md:w-auto">
+                    <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">To</label>
+                    <input
+                      type="date"
+                      value={insightsToDate}
+                      onChange={(e) => setInsightsToDate(e.target.value)}
+                      className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Button */}
+              <div className="flex flex-col mt-auto">
+                {/* <label className="text-transparent mb-1 select-none">.</label> */}
+                <button
+                  onClick={fetchInsights}
+                  className="rounded-lg bg-brand-900 px-4 py-1 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-400 dark:hover:bg-brand-300"
+                >
+                  Load Insights
+                </button>
+              </div>
+            </div>
+
+            {insightsLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <span className="text-sm text-gray-500 dark:text-gray-300">Loading insights...</span>
+              </div>
+            ) : (
+              insightsData && insightsData.length > 0 && (
+                <div className="overflow-x-auto border rounded-lg dark:border-navy-600">
+                  <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-gray-200 dark:bg-navy-700 text-gray-700 dark:text-gray-200">
+                      {insightLevel === "adset" && (
+                        <>
+                          <th className="px-4 py-2 text-left">Adset</th>
+                          <th className="px-4 py-2 text-left">Campaign</th>
+                        </>
+                      )}
+                      {insightLevel === "campaign" && (
+                        <th className="px-4 py-2 text-left">Campaign</th>
+                      )}
+                      {/* Common columns */}
+                      <th className="px-4 py-2 text-left">Impressions</th>
+                      <th className="px-4 py-2 text-left">Reach</th>
+                      <th className="px-4 py-2 text-left">Clicks</th>
+                      <th className="px-4 py-2 text-left">CTR</th>
+                      <th className="px-4 py-2 text-left">CPC</th>
+                      <th className="px-4 py-2 text-left">CPM</th>
+                      <th className="px-4 py-2 text-left">Spend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insightsData.map((row, idx) => (
+                      <tr key={idx} className="border-t dark:border-navy-600">
+                        {insightLevel === "adset" && (
+                          <>
+                            <td className="px-4 py-2">{row.adset_name}</td>
+                            <td className="px-4 py-2">{row.campaign_name}</td>
+                          </>
+                        )}
+                        {insightLevel === "campaign" && (
+                          <td className="px-4 py-2">{row.campaign_name}</td>
+                        )}
+                        <td className="px-4 py-2">{row.impressions}</td>
+                        <td className="px-4 py-2">{row.reach}</td>
+                        <td className="px-4 py-2">{row.clicks}</td>
+                        <td className="px-4 py-2">{roundToTwo((row.ctr))+'%'}</td>
+                        <td className="px-4 py-2">{formatCurrency(row.cpc)}</td>
+                        <td className="px-4 py-2">{formatCurrency(row.cpm)}</td>
+                        <td className="px-4 py-2">{formatCurrency(row.spend)}</td>
+                        
+                        
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+              )
+            )}
+            
+          </div>
+
         </div>
       </Card>
     </div>

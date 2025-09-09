@@ -5,6 +5,7 @@ const cronJobs = require('./cron');
 const authRoutes = require('./routes/auth');
 const encryptUrlRoutes = require('./routes/encrypt-url');
 const reportRoutes = require('./routes/report');
+const facebookRoutes = require('./routes/facebook');
 const cors = require('cors');
 const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog } = require('./models');
 const path = require('path');
@@ -50,6 +51,7 @@ app.get("/api/headers", async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/encrypt-url', encryptUrlRoutes);
+app.use('/api/facebook', facebookRoutes);
 
 cronJobs();
 
