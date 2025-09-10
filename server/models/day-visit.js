@@ -16,6 +16,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
+      feed_url_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'FeedUrl',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -39,6 +49,15 @@ module.exports = (sequelize, DataTypes) => {
       ],
     }
   );
+
+  DayVisit.associate = (models) => {
+    DayVisit.belongsTo(models.FeedUrl, {
+      foreignKey: 'feed_url_id',
+      as: 'feedUrl',
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    });
+  }
 
   return DayVisit;
 };
