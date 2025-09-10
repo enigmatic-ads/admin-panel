@@ -12,9 +12,19 @@ module.exports = (sequelize, DataTypes) => {
       },
       url_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'RedirectUrl',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+      feed_url_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'FeedUrl',
           key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -71,6 +81,13 @@ module.exports = (sequelize, DataTypes) => {
     ClientDetail.belongsTo(models.RedirectUrl, {
       foreignKey: 'url_id',
       as: 'redirectUrl',
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    });
+
+    ClientDetail.belongsTo(models.FeedUrl, {
+      foreignKey: 'feed_url_id',
+      as: 'feedUrl',
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     });
