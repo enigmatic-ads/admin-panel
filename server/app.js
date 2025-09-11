@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const encryptUrlRoutes = require('./routes/encrypt-url');
 const reportRoutes = require('./routes/report');
 const facebookRoutes = require('./routes/facebook');
+const campaignRoutes = require('./routes/campaign');
 const cors = require('cors');
 const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl } = require('./models');
 const path = require('path');
@@ -52,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/encrypt-url', encryptUrlRoutes);
 app.use('/api/facebook', facebookRoutes);
+app.use('/api', campaignRoutes);
 
 cronJobs();
 
@@ -311,35 +313,61 @@ async function handleKeywordSourceRedirect(req, res) {
     fallbackUrl = selfRedirectingUrls[Math.floor(Math.random() * selfRedirectingUrls.length)].url;
   }
 
-  // Fetch a random active URL from feed_urls matching the source and having available_cap > 0
+  let clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
+  const referer = req.headers.referer || req.headers.referrer || null;
+  const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
+  const userAgent = req.headers["user-agent"] || null;
+
+  //If IP and feed_url_id exist in day_visits table, redirect to fallback URL
+  let visitedUrlIds = [];
+  try {
+    const visits = await DayVisit.findAll({
+      where: {
+        client_ip: clientIp || remoteIp || null,
+      },
+      attributes: ["feed_url_id"],
+    });
+
+    visitedUrlIds = visits.map(v => v.feed_url_id);
+  } catch (error) {
+    try {
+      await ErrorLog.create({
+        api: "/",
+        message: "Error fetching from day_visits table",
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+    } catch (logError) {
+      console.error("Failed to insert into error_logs table:", logError);
+    }
+    return res.redirect(fallbackUrl);
+  }
+
+  // Fetch a random active URL from feed_urls excluding visited ones
   let urlData;
   let finalUrl;
   try {
     const urls = await FeedUrl.findAll({
       where: {
-        source,
+        source: { [Op.iLike]: source },
         status: "active",
         available_cap: { [Op.gt]: 0 },
+        id: { [Op.notIn]: visitedUrlIds }, // exclude visited
       },
     });
 
     if (!urls || urls.length === 0) {
+      console.log("No available URL found, redirecting to fallback");
       return res.redirect(fallbackUrl);
     }
 
     urlData = urls[Math.floor(Math.random() * urls.length)];
     console.log("Selected URL:", urlData.dataValues.url);
-    finalUrl = urlData.url.replace("{keyword}", encodeURIComponent(keyword));
 
+    finalUrl = urlData.url.replace("{keyword}", encodeURIComponent(keyword));
   } catch (err) {
     console.error("Error in fetching feed url", err);
     return res.status(500).send("Server error");
   }
-
-  let clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
-  const referer = req.headers.referer || req.headers.referrer || null;
-  const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
-  const userAgent = req.headers["user-agent"] || null;
 
   // If referer is null, redirect to a random fallback URL
   if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
@@ -370,57 +398,6 @@ async function handleKeywordSourceRedirect(req, res) {
 
     }
 
-    return res.redirect(fallbackUrl);
-  }
-
-  //If IP and feed_url_id exist in day_visits table, redirect to fallback URL
-  let urlVisitedRecord;
-  try {
-    urlVisitedRecord = await DayVisit.findOne({
-      where: {
-        feed_url_id: urlData.id,
-        client_ip: clientIp || remoteIp || null,
-      }
-    });
-  } catch (error) {
-    try {
-      await ErrorLog.create({
-        api: "/",
-        message: "Error finding from day_visits table",
-        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
-    } catch (logError) {
-      console.error("Failed to insert into error_logs table:", logError);
-    }
-
-    return res.redirect(fallbackUrl);
-  }
-
-  if (urlVisitedRecord) {
-    console.log("already visited today - redirecting to fallback URL");
-    try {
-      await ClientDetail.create({
-        feed_url_id: urlData.id,
-        remote_ip: remoteIp,
-        client_ip: clientIp,
-        user_agent: userAgent,
-        referer: referer,
-        failure: true,
-        failure_reason: "already visited today",
-      });
-    } catch (error) {
-      console.error("Failed to insert into client_details:", error);
-      try {
-        await ErrorLog.create({
-          api: "/",
-          message: "Error inserting into client_details table",
-          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-        });
-      } catch (logError) {
-        console.error("Failed to insert into error_logs table:", logError);
-      }
-      return res.redirect(fallbackUrl);
-    }
     return res.redirect(fallbackUrl);
   }
 
