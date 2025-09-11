@@ -7,6 +7,7 @@ import Profile from "views/admin/profile";
 import DataTables from "views/admin/tables";
 import EncryptURL from "views/admin/encrypt-url";
 import Reports from "views/admin/reports";
+import AddCampaign from "views/admin/add-campaign";
 
 // Icon Imports
 import {
@@ -14,6 +15,7 @@ import {
   MdOutlineShoppingCart,
   MdBarChart,
   MdPerson,
+  MdCampaign,
 } from "react-icons/md";
 
 import { FcDataConfiguration } from "react-icons/fc";
@@ -40,6 +42,13 @@ const routes = [
     path: "reports",
     icon: <GrDocumentText className="h-6 w-6" />,
     component: <Reports />,
+  },
+  {
+    name: "Add Campaign",
+    layout: "/admin",
+    path: "add-campaign",
+    icon: <MdCampaign className="h-6 w-6" />,
+    component: <AddCampaign />,
   },
   {
     name: "NFT Marketplace",
