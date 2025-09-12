@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
                 primaryKey: true,
                 allowNull: false,   
             },
+            campaign_id:{
+                type: DataTypes.STRING(20),
+                allowNull: false,
+            },
             url: {
                 type: DataTypes.TEXT,
                 allowNull: false,

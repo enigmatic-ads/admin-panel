@@ -7,7 +7,7 @@ import Profile from "views/admin/profile";
 import DataTables from "views/admin/tables";
 import EncryptURL from "views/admin/encrypt-url";
 import Reports from "views/admin/reports";
-import AddCampaign from "views/admin/add-campaign";
+import Campaigns from "views/admin/campaigns";
 
 // Icon Imports
 import {
@@ -44,11 +44,11 @@ const routes = [
     component: <Reports />,
   },
   {
-    name: "Add Campaign",
+    name: "Campaigns",
     layout: "/admin",
-    path: "add-campaign",
+    path: "campaigns",
     icon: <MdCampaign className="h-6 w-6" />,
-    component: <AddCampaign />,
+    component: <Campaigns />,
   },
   {
     name: "NFT Marketplace",
