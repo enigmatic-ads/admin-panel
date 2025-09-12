@@ -29,8 +29,9 @@ const countries = [
   "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
 ];
 
-export default function AddCampaign() {
+export default function Campaigns() {
   const [feedUrl, setFeedUrl] = useState("");
+  const [campaignId, setCampaignId] = useState("");
   const [source, setSource] = useState("");
   const [country, setCountry] = useState("");
   const [cap, setCap] = useState("");
@@ -64,6 +65,7 @@ export default function AddCampaign() {
 
     let newErrors = {};
     if (!feedUrl.trim()) newErrors.feedUrl = "*Feed URL is required";
+    if (!campaignId.trim()) newErrors.campaignId = "*Campaign ID is required";
     if (!feedUrl.includes("{keyword}")) newErrors.feedUrl = "*Feed URL must contain {keyword}";
     if (!source.trim()) newErrors.source = "*Source is required";
     if (!country.trim()) newErrors.country = "*Country is required";
@@ -87,12 +89,13 @@ export default function AddCampaign() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ feedUrl, source, country, cap: parseInt(cap) }),
+          body: JSON.stringify({ campaignId, feedUrl, source, country, cap: parseInt(cap) }),
         }
       );
 
       if (response.ok) {
         setSuccessMessage("Campaign added successfully!");
+        setCampaignId("");
         setFeedUrl("");
         setSource("");
         setCountry("");
@@ -111,6 +114,23 @@ export default function AddCampaign() {
     <div className="flex justify-center min-h-screen bg-gray-50 dark:bg-navy-900">
       <Card extra="w-full max-w-4xl h-full sm:overflow-auto px-10 py-8 mt-12 bg-white dark:bg-navy-800 dark:text-white">
         <div className="flex flex-col items-center p-6 w-full max-w-3xl mx-auto space-y-6">
+
+          {/* Campaign ID Input */}
+          <div className="w-full">
+            <label className="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+              Campaign ID
+            </label>
+            <input
+              type="text"
+              value={campaignId}
+              onChange={(e) => setCampaignId(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:outline-none bg-white dark:bg-navy-900 dark:text-gray-100 dark:border-navy-600"
+              placeholder="Enter Campaign ID"
+            />
+            {errors.campaignId && (
+              <p className="text-red-600 text-sm mt-1">{errors.campaignId}</p>
+            )}
+          </div>
 
           {/* Feed URL Input */}
           <div className="w-full">

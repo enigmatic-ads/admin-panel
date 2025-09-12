@@ -1,15 +1,16 @@
 const { FeedUrl } = require("../models");
 
 const addCampaign = async (req, res) => {
-    const { feedUrl, source, country, cap } = req.body;
+    const { campaignId ,feedUrl, source, country, cap } = req.body;
 
-    if (!feedUrl || !source || !country || !cap) {
+    if (!campaignId || !feedUrl || !source || !country || !cap) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     try {
         await FeedUrl.create({
             url: feedUrl,
+            campaign_id: campaignId,
             source,
             country,
             cap: parseInt(cap, 10),
