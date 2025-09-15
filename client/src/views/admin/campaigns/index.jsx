@@ -327,6 +327,19 @@ export default function Campaigns() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-sm mb-2">Device</label>
+                    <select
+                      value={device}
+                      onChange={(e) => setDevice(e.target.value)}
+                      className="w-full p-2 border rounded-lg"
+                    >
+                      <option value="0">Mobile</option>
+                      <option value="1">Desktop</option>
+                      <option value="2">Both</option>
+                    </select>
+                  </div>
+
                   <div className="flex space-x-4">
                     <button
                       onClick={handleSaveCampaign}

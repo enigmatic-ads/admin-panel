@@ -44,7 +44,7 @@ const getCampaignById = async (req, res) => {
 
 const updateCampaign = async (req, res) => {
   const { campaignId } = req.params;
-  const { source, country, cap, status } = req.body;
+  const { source, country, cap, status, device } = req.body;
 
   try {
     const [updatedRows] = await FeedUrl.update(
@@ -53,6 +53,7 @@ const updateCampaign = async (req, res) => {
         country,
         cap: parseInt(cap, 10),
         status,
+        device
       },
       {
         where: { campaign_id: campaignId },
