@@ -285,10 +285,18 @@ app.get("/", async (req, res) => {
 });
 
 async function handleKeywordSourceRedirect(req, res) {
-  const { keyword, source, device } = req.query;
+  const { keyword, source } = req.query;
   console.log(`Handling keyword-source redirect for keyword: ${keyword}, source: ${source}`);
 
-  let devices = parseInt(device, 10) === 2 ? [2] : [parseInt(device, 10), 2];
+  const device = detectDevice(req.headers);
+
+  let devices = [2];
+  if (device === 'mobile') {
+    devices.push(0);
+  } 
+  if (device === 'desktop') {
+    devices.push(1);
+  }
 
   // Fetch a random self-redirecting URL for fallback
   let selfRedirectingUrls;
@@ -490,6 +498,32 @@ async function handleKeywordSourceRedirect(req, res) {
   
 
   return res.redirect(finalUrl);
+}
+
+function detectDevice(headers) {
+  const ua = headers['user-agent'] || '';
+  const isMobileHeader = headers['sec-ch-ua-mobile'];
+
+  // 1. Check sec-ch-ua-mobile if present
+  if (isMobileHeader !== undefined) {
+    return isMobileHeader === '?1' ? 'mobile' : 'desktop';
+  }
+
+  // 2. Fallback: check user-agent string
+  const uaLower = ua.toLowerCase();
+
+  if (/mobile|iphone|ipod|android.*mobile|windows phone/.test(uaLower)) {
+    return 'mobile';
+  }
+  if (/ipad|tablet|android(?!.*mobile)/.test(uaLower)) {
+    return 'mobile'; //tablet
+  }
+
+  // 3. Default to desktop if user-agent exists but didn’t match
+  if (ua) return 'desktop';
+
+  // 4. If no user-agent at all - return null
+  return null;
 }
 
 app.get("/headers", (req, res) => {
