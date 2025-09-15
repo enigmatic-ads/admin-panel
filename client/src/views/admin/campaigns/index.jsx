@@ -92,7 +92,7 @@ export default function Campaigns() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ campaignId, feedUrl, source, country, cap: parseInt(cap), device: parseInt(device) }),
+          body: JSON.stringify({ campaignId, feedUrl, source, country, cap: parseInt(cap), device }),
         }
       );
 
