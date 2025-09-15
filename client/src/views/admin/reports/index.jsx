@@ -120,7 +120,7 @@ export default function Reports() {
 
       const data = await res.json();
       if (data.success) {
-        setInsightsData(data.insights);
+        setInsightsData(Array.isArray(data.insights) ? data.insights : []);
         setInsightLevel(insightLevelInput);
       } else {
         setInsightsData([]);
@@ -476,12 +476,13 @@ export default function Reports() {
 
             {insightsLoading ? (
               <div className="flex justify-center items-center py-10">
-                <span className="text-sm text-gray-500 dark:text-gray-300">Loading insights...</span>
+                <span className="text-sm text-gray-500 dark:text-gray-300">
+                  Loading insights...
+                </span>
               </div>
-            ) : (
-              insightsData && insightsData.length > 0 && (
-                <div className="overflow-x-auto border rounded-lg dark:border-navy-600">
-                  <table className="w-full border-collapse text-sm">
+            ) : insightsData && insightsData.length > 0 ? (
+              <div className="overflow-x-auto border rounded-lg dark:border-navy-600">
+                <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-gray-200 dark:bg-navy-700 text-gray-700 dark:text-gray-200">
                       {insightLevel === "adset" && (
@@ -518,22 +519,24 @@ export default function Reports() {
                         <td className="px-4 py-2">{row.impressions}</td>
                         <td className="px-4 py-2">{row.reach}</td>
                         <td className="px-4 py-2">{row.clicks}</td>
-                        <td className="px-4 py-2">{roundToTwo((row.ctr))+'%'}</td>
+                        <td className="px-4 py-2">{roundToTwo(row.ctr) + "%"}</td>
                         <td className="px-4 py-2">{formatCurrency(row.cpc)}</td>
                         <td className="px-4 py-2">{formatCurrency(row.cpm)}</td>
                         <td className="px-4 py-2">{formatCurrency(row.spend)}</td>
-                        
-                        
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                </div>
-              )
+              </div>
+            ) : (
+              <div className="flex justify-center items-center py-10">
+                <span className="text-sm text-gray-500 dark:text-gray-300">
+                  No insights available.
+                </span>
+              </div>
             )}
             
           </div>
-
         </div>
       </Card>
     </div>
