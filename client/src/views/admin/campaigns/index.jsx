@@ -37,6 +37,7 @@ export default function Campaigns() {
   const [country, setCountry] = useState("");
   const [cap, setCap] = useState("");
   const [status, setStatus] = useState("");
+  const [device, setDevice] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errors, setErrors] = useState({});
 
@@ -91,13 +92,13 @@ export default function Campaigns() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ campaignId, feedUrl, source, country, cap: parseInt(cap) }),
+          body: JSON.stringify({ campaignId, feedUrl, source, country, cap: parseInt(cap), device: parseInt(device) }),
         }
       );
 
       if (response.ok) {
         setSuccessMessage("Campaign added successfully!");
-        setCampaignId(""); setFeedUrl(""); setSource(""); setCountry(""); setCap("");
+        setCampaignId(""); setFeedUrl(""); setSource(""); setCountry(""); setCap("");setDevice("");
         setErrors({});
       } else {
         const data = await response.json();
@@ -222,6 +223,16 @@ export default function Campaigns() {
                 <label className="block text-sm mb-2">Cap</label>
                 <input type="number" value={cap} onChange={(e) => setCap(e.target.value)} className="w-full p-2 border rounded-lg" />
                 {errors.cap && <p className="text-red-600 text-sm mt-1">{errors.cap}</p>}
+              </div>
+              <div className="w-full">
+                <label className="block text-sm mb-2">Device</label>
+                <select value={device} onChange={(e) => setDevice(e.target.value)} className="w-full p-2 border rounded-lg">
+                  <option value="">-- Select Device --</option>
+                  <option value="0">Mobile</option>
+                  <option value="1">Desktop</option>
+                  <option value="2">Both</option>
+                </select>
+                {errors.device && <p className="text-red-600 text-sm mt-1">{errors.device}</p>}
               </div>
               <button onClick={handleAddCampaign} className="bg-brand-900 text-white px-6 py-3 rounded-lg">Add Campaign</button>
             </>
