@@ -80,6 +80,7 @@ export default function Campaigns() {
     if (!source.trim()) newErrors.source = "*Source is required";
     if (!country.trim()) newErrors.country = "*Country is required";
     if (!cap.trim() || isNaN(cap) || parseInt(cap) <= 0) newErrors.cap = "*Cap must be a positive integer";
+    if (!device.trim()) newErrors.device = "*Device is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -220,11 +221,6 @@ export default function Campaigns() {
                 {errors.country && <p className="text-red-600 text-sm mt-1">{errors.country}</p>}
               </div>
               <div className="w-full">
-                <label className="block text-sm mb-2">Cap</label>
-                <input type="number" value={cap} onChange={(e) => setCap(e.target.value)} className="w-full p-2 border rounded-lg" />
-                {errors.cap && <p className="text-red-600 text-sm mt-1">{errors.cap}</p>}
-              </div>
-              <div className="w-full">
                 <label className="block text-sm mb-2">Device</label>
                 <select value={device} onChange={(e) => setDevice(e.target.value)} className="w-full p-2 border rounded-lg">
                   <option value="">-- Select Device --</option>
@@ -233,6 +229,11 @@ export default function Campaigns() {
                   <option value="2">Both</option>
                 </select>
                 {errors.device && <p className="text-red-600 text-sm mt-1">{errors.device}</p>}
+              </div>
+              <div className="w-full">
+                <label className="block text-sm mb-2">Cap</label>
+                <input type="number" value={cap} onChange={(e) => setCap(e.target.value)} className="w-full p-2 border rounded-lg" />
+                {errors.cap && <p className="text-red-600 text-sm mt-1">{errors.cap}</p>}
               </div>
               <button onClick={handleAddCampaign} className="bg-brand-900 text-white px-6 py-3 rounded-lg">Add Campaign</button>
             </>
@@ -306,16 +307,6 @@ export default function Campaigns() {
                   </div>
 
                   <div>
-                    <label className="block text-sm mb-2">Cap</label>
-                    <input
-                      type="number"
-                      value={cap}
-                      onChange={(e) => setCap(e.target.value)}
-                      className="w-full p-2 border rounded-lg"
-                    />
-                  </div>
-
-                  <div>
                     <label className="block text-sm mb-2">Status</label>
                     <select
                       value={status}
@@ -338,6 +329,16 @@ export default function Campaigns() {
                       <option value="1">Desktop</option>
                       <option value="2">Both</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-2">Cap</label>
+                    <input
+                      type="number"
+                      value={cap}
+                      onChange={(e) => setCap(e.target.value)}
+                      className="w-full p-2 border rounded-lg"
+                    />
                   </div>
 
                   <div className="flex space-x-4">
