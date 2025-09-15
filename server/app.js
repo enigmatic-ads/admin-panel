@@ -8,7 +8,7 @@ const reportRoutes = require('./routes/report');
 const facebookRoutes = require('./routes/facebook');
 const campaignRoutes = require('./routes/campaign');
 const cors = require('cors');
-const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl } = require('./models');
+const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData } = require('./models');
 const path = require('path');
 
 const PORT = process.env.PORT || 4000;
@@ -468,6 +468,26 @@ async function handleKeywordSourceRedirect(req, res) {
       console.error("Failed to insert into error_logs table:", logError);
     }
   }
+
+  try {
+    await RefererData.create({
+        referer,
+        source: source.toLowerCase(),
+      });
+  } catch (error) {
+    console.error("Error inserting data in referer_data table:", error)
+
+    try {
+      await ErrorLog.create({
+        api: "/",
+        message: "Error inserting data in referer_data table",
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+    } catch (logError) {
+      console.error("Failed to insert into referer_data table:", logError);
+    }
+  }
+  
 
   return res.redirect(finalUrl);
 }
