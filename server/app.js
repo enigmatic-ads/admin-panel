@@ -32,6 +32,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+cronJobs();
+
 app.get("/api/headers", async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.status(200).send(
@@ -54,8 +56,6 @@ app.use('/api/report', reportRoutes);
 app.use('/api/encrypt-url', encryptUrlRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api', campaignRoutes);
-
-cronJobs();
 
 app.get("/", async (req, res) => {
 
@@ -285,8 +285,10 @@ app.get("/", async (req, res) => {
 });
 
 async function handleKeywordSourceRedirect(req, res) {
-  const { keyword, source } = req.query;
+  const { keyword, source, device } = req.query;
   console.log(`Handling keyword-source redirect for keyword: ${keyword}, source: ${source}`);
+
+  let devices = parseInt(device, 10) === 2 ? [2] : [parseInt(device, 10), 2];
 
   // Fetch a random self-redirecting URL for fallback
   let selfRedirectingUrls;
@@ -352,6 +354,7 @@ async function handleKeywordSourceRedirect(req, res) {
         status: "active",
         available_cap: { [Op.gt]: 0 },
         id: { [Op.notIn]: visitedUrlIds }, // exclude visited
+        device: { [Op.in]: devices }
       },
     });
 
