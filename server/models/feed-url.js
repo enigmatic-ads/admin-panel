@@ -38,6 +38,14 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 defaultValue: 'active',
             },
+            device: {
+                type: DataTypes.SMALLINT,
+                allowNull: false,
+                defaultValue: 2,
+                validate: {
+                    isIn: [[0, 1, 2]],
+                },
+            },
             created_at: {
                 type: DataTypes.DATE,
                 allowNull: false,
