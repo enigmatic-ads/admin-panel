@@ -1,8 +1,9 @@
+require('dotenv').config();
 const bizSdk = require('facebook-nodejs-business-sdk');
 const AdAccount = bizSdk.AdAccount;
 
-const access_token = 'EAAYE68HAov8BPTDgiU5Eif3sWPc1OKX2AC8BQdyKDANTddNrIeEZBEwZCvsrVgUpfZCYV3Q5pS3bBEM7BhQ9oAYLVZBFSz5cXFjJQSD8nlGiRU97tmoZBc5QwiZB7PoJlZBRWj7irvGZAvZBfcZB86t8ZBbFZBhYudhZB3ZCkVbmE8dFr9nzAAd0cYxFCZAd9bK8lQJro3S1Mj9XooK';
-const ad_account_id = 'act_195455750129212';
+const access_token = process.env.FACEBOOK_ACCESS_TOKEN;
+const ad_account_id = process.env.FACEBOOK_AD_ACCOUNT_ID;
 
 const api = bizSdk.FacebookAdsApi.init(access_token);
 api.setDebug(false);
