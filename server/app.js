@@ -502,11 +502,11 @@ async function handleKeywordSourceRedirect(req, res) {
 
 function detectDevice(headers) {
   const ua = headers['user-agent'] || '';
-  const isMobileHeader = headers['sec-ch-ua-mobile'];
+  const mobileHeader = headers['sec-ch-ua-mobile'];
 
   // 1. Check sec-ch-ua-mobile if present
-  if (isMobileHeader !== undefined) {
-    return isMobileHeader === '?1' ? 'mobile' : 'desktop';
+  if (mobileHeader !== undefined) {
+    return mobileHeader === '?1' ? 'mobile' : 'desktop';
   }
 
   // 2. Fallback: check user-agent string
