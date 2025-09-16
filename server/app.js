@@ -519,10 +519,10 @@ function detectDevice(headers) {
     return 'mobile'; //tablet
   }
 
-  // 3. Default to desktop if user-agent exists but didn’t match
+  // 3. If user-agent exists but didn’t match, return desktop
   if (ua) return 'desktop';
 
-  // 4. If no user-agent at all - return null
+  // 4. If no user-agent at all, return null
   return null;
 }
 
