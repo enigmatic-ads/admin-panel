@@ -30,20 +30,25 @@ async function getTaboolaToken() {
 }
 
 async function getInsights(req, res) {
-    const { level } = req.query;
-    console.log('query',req.query)
-    console.log(level);
+    const { level, timeRange, since, until } = req.query;
 
-    if (level === 'campaign') {
-        return getCampaignSummary(req, res);
-    } else if (level === 'ad' || level === 'adset') {
-        return getTopCampaignContent(req, res);
+    let startDate = since; 
+    let endDate = until;
+    if (timeRange) {
+       ({ startDate, endDate } = getStartAndEndDates(timeRange));
     }
+
+    let insights;
+    if (level === 'campaign' || level === 'account') {
+        insights = await getCampaignSummary(level, startDate, endDate);
+    } else if (level === 'ad') {
+        insights = await getTopCampaignContent(startDate, endDate);
+    }
+
+    return res.json({ success: true, insights });
 }
 
-async function getCampaignSummary(req, res) {
-  const { since: startDate, until: endDate } = req.query;
-
+async function getCampaignSummary(level, startDate, endDate) {
   const token = await getTaboolaToken();
 
   const url = `https://backstage.taboola.com/backstage/api/1.0/taboolaaccount-shivanienigmaticadscom/reports/campaign-summary/dimensions/campaign_breakdown`;
@@ -68,16 +73,45 @@ async function getCampaignSummary(req, res) {
       cpm: row.cpm,
       cpc: row.cpc,
     }));
-    res.json({ success: true, insights });
+
+    if(level === 'account') {
+      const accountInsights = insights.reduce(
+        (acc, cur) => {
+          acc.clicks += cur.clicks;
+          acc.impressions += cur.impressions;
+          acc.spend += cur.spend;
+          return acc;
+        },
+        { impressions: 0, clicks: 0, spend: 0 }
+      );
+
+      accountInsights.ctr =
+        accountInsights.impressions > 0
+          ? (accountInsights.clicks / accountInsights.impressions) * 100
+          : 0;
+
+      accountInsights.cpc =
+        accountInsights.clicks > 0
+          ? accountInsights.spend / accountInsights.clicks
+          : 0;
+
+      accountInsights.cpm =
+        accountInsights.impressions > 0
+          ? (accountInsights.spend / accountInsights.impressions) * 1000
+          : 0;
+
+      const accountInsightsArray = [accountInsights];
+
+      return accountInsightsArray;
+    }
+    return(insights);
   } catch (error) {
     console.error("Error fetching campaign summary:", error.response?.data || error.message);
     throw new Error("Failed to fetch campaign summary");
   }
 }
 
-async function getTopCampaignContent(req, res) {
-  const { since: startDate, until: endDate } = req.query;
-
+async function getTopCampaignContent(startDate, endDate) {
   const token = await getTaboolaToken();
 
   const url = `https://backstage.taboola.com/backstage/api/1.0/taboolaaccount-shivanienigmaticadscom/reports/top-campaign-content/dimensions/item_breakdown`;
@@ -103,11 +137,70 @@ async function getTopCampaignContent(req, res) {
       cpm: row.cpm,
       cpc: row.cpc,
     }));
-    res.json({ success: true, insights });
+    return(insights);
   } catch (error) {
     console.error("Error fetching campaign summary:", error.response?.data || error.message);
     throw new Error("Failed to fetch campaign summary");
   }
+}
+
+function getStartAndEndDates(timeRange) {
+  const today = new Date();
+  let startDate, endDate;
+
+  switch (timeRange) {
+    case "today":
+      startDate = new Date(today);
+      endDate = new Date(today);
+      break;
+
+    case "yesterday":
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 1);
+      endDate = new Date(startDate);
+      break;
+
+    case "last_7d":
+      endDate = new Date(today);
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 6);
+      break;
+
+    case "last_30d":
+      endDate = new Date(today);
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 29);
+      break;
+
+    case "last_90d":
+      endDate = new Date(today);
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 89);
+      break;
+
+    case "this_month":
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today);
+      break;
+
+    case "last_month":
+      startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+      break;
+
+    case "this_year":
+      startDate = new Date(today.getFullYear(), 0, 1);
+      endDate = new Date(today);
+      break;
+
+    default:
+      throw new Error("Invalid timeRange");
+  }
+
+  return {
+    startDate: startDate.toISOString().split("T")[0],
+    endDate: endDate.toISOString().split("T")[0],
+  };
 }
 
 module.exports = {
