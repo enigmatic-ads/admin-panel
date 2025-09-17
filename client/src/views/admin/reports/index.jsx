@@ -12,14 +12,21 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});  
   const [expandedUrls, setExpandedUrls] = useState({}); 
-  const [insightLevel, setInsightLevel] = useState("adset");
-  const [timeRange, setTimeRange] = useState("last_7d");
   const [insightsData, setInsightsData] = useState([]);
-  const [insightLevelInput, setInsightLevelInput] = useState("adset");
   const [timeRangeInput, setTimeRangeInput] = useState("today");
   const [insightsFromDate, setInsightsFromDate] = useState('');
   const [insightsToDate, setInsightsToDate] = useState('');
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightSource, setInsightSource] = useState("facebook");
+  const [insightSourceInput, setInsightSourceInput] = useState("facebook");
+  const [insightLevel, setInsightLevel] = useState(
+    insightSource === "facebook" ? "adset" : "ad"
+  );
+  const [insightLevelInput, setInsightLevelInput] = useState(
+    insightSourceInput === "facebook" ? "adset" : "ad"
+  );
+
+
   
 
   // Redirect if no token
@@ -48,9 +55,9 @@ export default function Reports() {
   }, []);
 
   useEffect(() => {
-    fetchInsights();
-    // eslint-disable-next-line
-  }, []);
+    setInsightLevelInput(insightSourceInput === "facebook" ? "adset" : "ad");
+  }, [insightSourceInput]);
+
 
   const handleGetReport = async (start, end, skipValidation = false) => {
     let newErrors = {};
@@ -114,14 +121,21 @@ export default function Reports() {
         params.append("timeRange", timeRangeInput);
       }
 
+      const endpoint =
+        insightSourceInput === "facebook"
+          ? `/api/facebook/insights?${params.toString()}`
+          : `/api/taboola/insights?${params.toString()}`;
+
       const res = await fetch(
-        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/facebook/insights?${params.toString()}`
+        `${process.env.REACT_APP_BACKEND_BASE_URL}${endpoint}`
       );
 
       const data = await res.json();
       if (data.success) {
         setInsightsData(Array.isArray(data.insights) ? data.insights : []);
-        setInsightLevel(insightLevelInput);
+        setInsightLevel(insightLevelInput);   // safe update
+        setInsightSource(insightSourceInput); // safe update
+        console.log("insightSource used →", insightSourceInput);
       } else {
         setInsightsData([]);
       }
@@ -397,6 +411,20 @@ export default function Reports() {
 
             {/* Filters for Insights */}
             <div className="flex flex-col md:flex-row flex-wrap md:items-end gap-4 mb-4">
+              {/* Source Dropdown */}
+              <div className="flex flex-col w-full md:w-auto">
+                <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
+                  Source
+                </label>
+                <select
+                  value={insightSourceInput}
+                  onChange={(e) => setInsightSourceInput(e.target.value)}
+                  className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                >
+                  <option value="facebook">Facebook</option>
+                  <option value="taboola">Taboola</option>
+                </select>
+              </div>
               {/* Level Dropdown */}
               <div className="flex flex-col w-full md:w-auto">
                 <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
@@ -407,9 +435,19 @@ export default function Reports() {
                   onChange={(e) => setInsightLevelInput(e.target.value)}
                   className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
                 >
-                  <option value="adset">Adset</option>
-                  <option value="campaign">Campaign</option>
-                  <option value="account">Account</option>
+                  {insightSourceInput === "facebook" ? (
+                      <>
+                        <option value="adset">Adset</option>
+                        <option value="campaign">Campaign</option>
+                        <option value="account">Account</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="ad">Ad</option>
+                        <option value="campaign">Campaign</option>
+                        <option value="account">Account</option>
+                      </>
+                    )}
                 </select>
               </div>
 
@@ -431,7 +469,6 @@ export default function Reports() {
                   <option value="this_month">This Month</option>
                   <option value="last_month">Last Month</option>
                   <option value="this_year">This Year</option>
-                  <option value="lifetime">Lifetime</option>
                   <option value="custom">Custom</option>
                 </select>
               </div>
@@ -491,12 +528,21 @@ export default function Reports() {
                           <th className="px-4 py-2 text-left">Campaign</th>
                         </>
                       )}
+                      {insightLevel === "ad" && (
+                        <>
+                          <th className="px-4 py-2 text-left">Ad Name</th>
+                          <th className="px-4 py-2 text-left">Campaign</th>
+                        </>
+                      )}
                       {insightLevel === "campaign" && (
                         <th className="px-4 py-2 text-left">Campaign</th>
                       )}
+                      {insightSource === "facebook" && (
+                        <th className="px-4 py-2 text-left">Reach</th>
+                      )}
+
                       {/* Common columns */}
                       <th className="px-4 py-2 text-left">Impressions</th>
-                      <th className="px-4 py-2 text-left">Reach</th>
                       <th className="px-4 py-2 text-left">Clicks</th>
                       <th className="px-4 py-2 text-left">CTR</th>
                       <th className="px-4 py-2 text-left">CPC</th>
@@ -507,17 +553,19 @@ export default function Reports() {
                   <tbody>
                     {insightsData.map((row, idx) => (
                       <tr key={idx} className="border-t dark:border-navy-600">
-                        {insightLevel === "adset" && (
+                        {(insightLevel === "adset" || insightLevel === 'ad') && (
                           <>
-                            <td className="px-4 py-2">{row.adset_name}</td>
+                            <td className="px-4 py-2">{row.adset_name || row.ad_name }</td>
                             <td className="px-4 py-2">{row.campaign_name}</td>
                           </>
                         )}
                         {insightLevel === "campaign" && (
                           <td className="px-4 py-2">{row.campaign_name}</td>
                         )}
+                        {insightSource === 'facebook' && (
+                          <td className="px-4 py-2">{row.reach}</td>
+                        )}
                         <td className="px-4 py-2">{row.impressions}</td>
-                        <td className="px-4 py-2">{row.reach}</td>
                         <td className="px-4 py-2">{row.clicks}</td>
                         <td className="px-4 py-2">{roundToTwo(row.ctr) + "%"}</td>
                         <td className="px-4 py-2">{formatCurrency(row.cpc)}</td>

@@ -7,6 +7,7 @@ const encryptUrlRoutes = require('./routes/encrypt-url');
 const reportRoutes = require('./routes/report');
 const facebookRoutes = require('./routes/facebook');
 const campaignRoutes = require('./routes/campaign');
+const taboolaRoutes = require('./routes/taboola');
 const cors = require('cors');
 const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData } = require('./models');
 const path = require('path');
@@ -55,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/encrypt-url', encryptUrlRoutes);
 app.use('/api/facebook', facebookRoutes);
+app.use('/api/taboola', taboolaRoutes);
 app.use('/api', campaignRoutes);
 
 app.get("/", async (req, res) => {
@@ -502,11 +504,11 @@ async function handleKeywordSourceRedirect(req, res) {
 
 function detectDevice(headers) {
   const ua = headers['user-agent'] || '';
-  const isMobileHeader = headers['sec-ch-ua-mobile'];
+  const mobileHeader = headers['sec-ch-ua-mobile'];
 
   // 1. Check sec-ch-ua-mobile if present
-  if (isMobileHeader !== undefined) {
-    return isMobileHeader === '?1' ? 'mobile' : 'desktop';
+  if (mobileHeader !== undefined) {
+    return mobileHeader === '?1' ? 'mobile' : 'desktop';
   }
 
   // 2. Fallback: check user-agent string
@@ -519,10 +521,10 @@ function detectDevice(headers) {
     return 'mobile'; //tablet
   }
 
-  // 3. Default to desktop if user-agent exists but didn’t match
+  // 3. If user-agent exists but didn’t match, return desktop
   if (ua) return 'desktop';
 
-  // 4. If no user-agent at all - return null
+  // 4. If no user-agent at all, return null
   return null;
 }
 
