@@ -46,6 +46,28 @@ const updateCampaign = async (req, res) => {
   const { campaignId } = req.params;
   const { source, country, cap, status, device } = req.body;
 
+  let feedUrlData;
+  try{
+    feedUrlData = await FeedUrl.findOne({
+      where: {
+        campaign_id: campaignId,
+      }
+    });
+  } catch(error) {
+    console.error("Error fetching feed url data:", error);
+    res.status(500).json({ error: "Database error: " + error.message });
+  }
+
+  //Alter available_cap if cap is changed
+  let availableCap = feedUrlData.available_cap;
+
+  if(cap - feedUrlData.cap) {
+    availableCap += cap - feedUrlData.cap;
+    if (availableCap < 0) {
+      availableCap = 0;
+    }
+  }
+
   try {
     const [updatedRows] = await FeedUrl.update(
       {
@@ -53,7 +75,8 @@ const updateCampaign = async (req, res) => {
         country,
         cap: parseInt(cap, 10),
         status,
-        device
+        device,
+        available_cap: availableCap,
       },
       {
         where: { campaign_id: campaignId },
