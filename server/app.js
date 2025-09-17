@@ -7,6 +7,7 @@ const encryptUrlRoutes = require('./routes/encrypt-url');
 const reportRoutes = require('./routes/report');
 const facebookRoutes = require('./routes/facebook');
 const campaignRoutes = require('./routes/campaign');
+const taboolaRoutes = require('./routes/taboola');
 const cors = require('cors');
 const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData } = require('./models');
 const path = require('path');
@@ -55,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/encrypt-url', encryptUrlRoutes);
 app.use('/api/facebook', facebookRoutes);
+app.use('/api/taboola', taboolaRoutes);
 app.use('/api', campaignRoutes);
 
 app.get("/", async (req, res) => {
