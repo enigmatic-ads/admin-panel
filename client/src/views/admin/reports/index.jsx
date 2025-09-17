@@ -20,6 +20,8 @@ export default function Reports() {
   const [insightsFromDate, setInsightsFromDate] = useState('');
   const [insightsToDate, setInsightsToDate] = useState('');
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightSource, setInsightSource] = useState("facebook");
+
   
 
   // Redirect if no token
@@ -114,8 +116,13 @@ export default function Reports() {
         params.append("timeRange", timeRangeInput);
       }
 
+      const endpoint =
+      insightSource === "facebook"
+        ? `/api/facebook/insights?${params.toString()}`
+        : `/api/taboola/insights?${params.toString()}`;
+
       const res = await fetch(
-        `${process.env.REACT_APP_BACKEND_BASE_URL}/api/facebook/insights?${params.toString()}`
+        `${process.env.REACT_APP_BACKEND_BASE_URL}${endpoint}`
       );
 
       const data = await res.json();
@@ -397,6 +404,20 @@ export default function Reports() {
 
             {/* Filters for Insights */}
             <div className="flex flex-col md:flex-row flex-wrap md:items-end gap-4 mb-4">
+              {/* Source Dropdown */}
+              <div className="flex flex-col w-full md:w-auto">
+                <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
+                  Source
+                </label>
+                <select
+                  value={insightSource}
+                  onChange={(e) => setInsightSource(e.target.value)}
+                  className="px-2 py-1 text-sm border rounded bg-white dark:bg-navy-700 dark:text-white dark:border-navy-600"
+                >
+                  <option value="facebook">Facebook</option>
+                  <option value="taboola">Taboola</option>
+                </select>
+              </div>
               {/* Level Dropdown */}
               <div className="flex flex-col w-full md:w-auto">
                 <label className="text-gray-700 dark:text-gray-300 text-xs mb-1">
