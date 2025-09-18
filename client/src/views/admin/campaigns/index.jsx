@@ -128,6 +128,7 @@ export default function Campaigns() {
         setCountry(data.country || "");
         setCap(data.cap?.toString() || "");
         setDevice(data.device?.toString() || "");
+        setStatus(data.status || "");
       } else {
         setSearchErrorMessage("No campaign found for the given campaign id !");
         setTimeout(() => setSearchErrorMessage(""), 4000);
