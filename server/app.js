@@ -290,6 +290,14 @@ async function handleKeywordSourceRedirect(req, res) {
   const { keyword, source } = req.query;
   console.log(`Handling keyword-source redirect for keyword: ${keyword}, source: ${source}`);
 
+  //If request is from facebook or taboola bot, redirect it to aboutfashions search results page
+  if(
+    req.headers['user-agent'] 
+    && (req.headers['user-agent'].includes('Taboolabot') || req.headers['user-agent'].includes('facebookexternalhit'))
+  ) {
+    return res.redirect(`https://aboutfashions.com/search?q=${encodeURIComponent(keyword)}`)
+  }
+
   const device = detectDevice(req.headers);
 
   let devices = [2];
