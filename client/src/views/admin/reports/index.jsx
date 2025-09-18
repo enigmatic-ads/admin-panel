@@ -191,10 +191,10 @@ export default function Reports() {
     <div className="flex justify-center min-h-screen bg-gray-50 dark:bg-navy-900">
       <Card extra="w-full max-w-6xl h-full sm:overflow-auto px-10 py-8 mt-12 bg-white dark:bg-navy-800">
         <div className="flex flex-col items-center p-6 w-full max-w-5xl mx-auto">
-          {/* Encrypted URLs section */}
+          {/* Feed URLs Traffic section */}
           <div className="w-full">
           <h3 className="text-gray-800 dark:text-white font-semibold mb-2">
-            Encrypted URLs Traffic
+            Feed URLs Traffic
           </h3>
           <div className="flex flex-wrap items-end gap-3">
             {/* Campaign ID */}
