@@ -420,11 +420,11 @@ async function handleKeywordSourceRedirect(req, res) {
 
     }
 
+    console.log('Null referer - Redirecting to fallback Url');
     return res.redirect(fallbackUrl);
   }
 
   // Allow the visit - insert into day_visits and client_details and then redirect to finalUrl
-  console.log("New visit - allowing and redirecting to final URL:", finalUrl);
   try {
     await DayVisit.create({
       feed_url_id: urlData.id,
@@ -507,7 +507,7 @@ async function handleKeywordSourceRedirect(req, res) {
     }
   }
   
-
+  console.log("New visit - allowing and redirecting to final URL:", finalUrl);
   return res.redirect(finalUrl);
 }
 
