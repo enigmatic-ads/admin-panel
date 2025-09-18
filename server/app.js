@@ -393,7 +393,6 @@ async function handleKeywordSourceRedirect(req, res) {
 
   // If referer is null, redirect to a random fallback URL
   if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
-    console.log("Null referer - redirecting to fallback URL");
     try {
       await ClientDetail.create({
         feed_url_id: urlData.id,
