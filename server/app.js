@@ -295,6 +295,7 @@ async function handleKeywordSourceRedirect(req, res) {
     req.headers['user-agent'] 
     && (req.headers['user-agent'].includes('Taboolabot') || req.headers['user-agent'].includes('facebookexternalhit'))
   ) {
+    console.log('Redirecting to aboutfashions search results page')
     return res.redirect(`https://aboutfashions.com/search?q=${encodeURIComponent(keyword)}`)
   }
 
