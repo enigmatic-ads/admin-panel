@@ -61,14 +61,20 @@ app.use('/api', campaignRoutes);
 
 app.get("/", async (req, res) => {
 
-  const { id, campId: campaignId, keyword, source } = req.query;
+  const { id, campId: campaignId, keyword, source, subid } = req.query;
 
-  if (!id && !campaignId && !keyword && !source) {
+  if (
+    !( (campaignId && id) || (keyword && source) || subid )
+  ) {
     return res.sendFile(path.join(__dirname, "../client/build", "index.html"));
   }
 
   if(keyword && source) {
     return handleKeywordSourceRedirect(req, res);
+  }
+
+  if (subid) {
+    return handleSubIdRedirect(req, res);
   }
 
   let selfRedirectingUrls;
@@ -310,29 +316,7 @@ async function handleKeywordSourceRedirect(req, res) {
   }
 
   // Fetch a random self-redirecting URL for fallback
-  let selfRedirectingUrls;
-  let fallbackUrl;
-  try {
-    selfRedirectingUrls = await SelfRedirectingUrl.findAll({
-      attributes: ["url"],
-    });
-  } catch (error) {
-    console.error("Error fetching self_redirecting_urls:", error);
-    try {
-      await ErrorLog.create({
-        api: "/",
-        message: "Error fetching from self_redirecting_urls table",
-        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
-    } catch (logError) {
-      console.error("Failed to insert into error_logs table:", logError);
-    }
-    return res.status(500).send("Internal Server Error");
-  }
-
-  if (selfRedirectingUrls.length !== 0) {
-    fallbackUrl = selfRedirectingUrls[Math.floor(Math.random() * selfRedirectingUrls.length)].url;
-  }
+  const fallbackUrl = await getFallbackUrl();
 
   let clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
   const referer = req.headers.referer || req.headers.referrer || null;
@@ -510,6 +494,33 @@ async function handleKeywordSourceRedirect(req, res) {
   return res.redirect(finalUrl);
 }
 
+async function getFallbackUrl() {
+  let selfRedirectingUrls;
+  let fallbackUrl;
+  try {
+    selfRedirectingUrls = await SelfRedirectingUrl.findAll({
+      attributes: ["url"],
+    });
+  } catch (error) {
+    console.error("Error fetching self_redirecting_urls:", error);
+    try {
+      await ErrorLog.create({
+        api: "/",
+        message: "Error fetching from self_redirecting_urls table",
+        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+    } catch (logError) {
+      console.error("Failed to insert into error_logs table:", logError);
+    }
+    return res.status(500).send("Internal Server Error");
+  }
+
+  if (selfRedirectingUrls.length !== 0) {
+    fallbackUrl = selfRedirectingUrls[Math.floor(Math.random() * selfRedirectingUrls.length)].url;
+  }
+  return fallbackUrl;
+}
+
 function detectDevice(headers) {
   const ua = headers['user-agent'] || '';
   const mobileHeader = headers['sec-ch-ua-mobile'];
@@ -534,6 +545,42 @@ function detectDevice(headers) {
 
   // 4. If no user-agent at all, return null
   return null;
+}
+
+async function handleSubIdRedirect(req, res) {
+  let refererData;
+  try {
+    refererData = await RefererData.findAll({
+      where: {
+        is_used: false,
+      },
+      attributes: ["id", "referer"],
+    });
+  } catch (error) {
+    console.error('Error fetching referer data:', error);
+    return res.status(500).send("Internal Server Error");
+  }
+  
+  if (refererData && refererData.length > 0) {
+    const randomReferer = refererData[Math.floor(Math.random() * refererData.length)];
+
+    try {
+      await RefererData.update(
+        { is_used: true },
+        { where: { id: randomReferer.id } },        
+      );
+    } catch(error) {
+      console.error('Error updating referer data', error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    return res.redirect(randomReferer.referer);
+  } else {
+    const fallbackUrl = await getFallbackUrl();
+    console.log('No referer data found, redirecting to fallbackUrl');
+    return res.redirect(fallbackUrl);
+  }
+  
 }
 
 app.get("/headers", (req, res) => {
