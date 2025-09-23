@@ -9,7 +9,7 @@ const facebookRoutes = require('./routes/facebook');
 const campaignRoutes = require('./routes/campaign');
 const taboolaRoutes = require('./routes/taboola');
 const cors = require('cors');
-const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData } = require('./models');
+const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData, SubidBlockedHit } = require('./models');
 const path = require('path');
 const cookieParser = require("cookie-parser");
 
@@ -81,7 +81,26 @@ app.get("/", async (req, res) => {
     if (process.env.ALLOW_SUBID_URL === 'true') {
       return handleSubIdRedirect(req, res);
     } else {
-      return res.redirect(fallbackUrl)
+
+      const clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
+      const referer = req.headers.referer || req.headers.referrer || null;
+      const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
+      const userAgent = req.headers["user-agent"] || null;
+
+      try {
+        await SubidBlockedHit.create({
+          subid: subid,
+          remote_ip: remoteIp,
+          client_ip: clientIp,
+          user_agent: userAgent,
+          referer: referer,
+        });
+      } catch (error) {
+        console.error('Error inserting into subid_blocked_hits:', error);
+        return res.status(500).send('Internal Server Error.');
+      }
+      
+      return res.redirect("https://www.aboutfashions.com/");
     }
   }
 
