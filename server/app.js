@@ -631,6 +631,31 @@ async function handleSubIdRedirect(req, res) {
 function updateTblciInUrl(url) {
   const urlObj = new URL(url);
 
+  //Changes for https://api.taboola.com
+  if (urlObj.origin.startsWith("https://api")) {
+    const itemId = urlObj.searchParams.get("item.id");
+    const cpb = urlObj.searchParams.get("cpb");
+    const newTail = randomAlphaNumeric(5);
+    const newitemId = itemId.slice(0, -5) + newTail;
+    const newCpb = cpb.slice(0, -5) + newTail;
+    urlObj.searchParams.set("item.id", newitemId);
+    urlObj.searchParams.set("cpb", newCpb);
+  }
+
+  //Changes for https://trc.taboola.com
+  if (urlObj.origin.startsWith("https://trc")) {
+    const ii = urlObj.searchParams.get("ii");
+    const vi = urlObj.searchParams.get("vi");
+    const cpb = urlObj.searchParams.get("cpb");
+    const newTail = randomAlphaNumeric(5);
+    const newIi = ii.slice(0, -5) + newTail;
+    const newCpb = cpb.slice(0, -5) + newTail;
+    const newVi = Date.now();
+    urlObj.searchParams.set("ii", newIi);
+    urlObj.searchParams.set("cpb", newCpb);
+    urlObj.searchParams.set("vi", newVi);
+  }
+
   // 1. Get redir param
   const redirParam = urlObj.searchParams.get("redir");
   if (!redirParam) return url;
@@ -658,8 +683,8 @@ function updateTblciInUrl(url) {
     );
   }
 
-  // 7. Re-encode and put back in outer URL
-  urlObj.searchParams.set("redir", encodeURIComponent(innerUrlObj.toString()));
+  // 7. Put back redir in outer URL
+  urlObj.searchParams.set("redir", innerUrlObj.toString());
 
   return urlObj.toString();
 }
