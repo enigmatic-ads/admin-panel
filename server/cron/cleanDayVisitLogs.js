@@ -6,7 +6,6 @@ const { sequelize } = require("../models");
 const cleanDayVisitLogs = () => {
     cron.schedule(
       "0 0 * * *",
-    // "* * * * *",
       async () => {
         const currentTime = moment().tz("UTC").format();
         console.log(`Truncating day_visits table at UTC: ${currentTime}`);
@@ -19,6 +18,10 @@ const cleanDayVisitLogs = () => {
           // Reset available_cap back to cap
           await sequelize.query("UPDATE feed_urls SET available_cap = cap;");
           console.log("feed_urls available_cap reset to cap successfully.");
+
+          //Set is_used to false in referer_data table
+          await sequelize.query("UPDATE referer_data SET is_used = false;");
+          console.log("referer_data table is_used reset to false successfully.");
       
         } catch (error) {
           console.error("Error truncating day_visits table:", error);

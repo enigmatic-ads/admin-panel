@@ -11,10 +11,12 @@ const taboolaRoutes = require('./routes/taboola');
 const cors = require('cors');
 const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData } = require('./models');
 const path = require('path');
+const cookieParser = require("cookie-parser");
 
 const PORT = process.env.PORT || 4000;
 
 const app = express();
+app.use(cookieParser());
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, { 
   dialect: "postgres",
@@ -471,25 +473,41 @@ async function handleKeywordSourceRedirect(req, res) {
     }
   }
 
-  try {
-    await RefererData.create({
-        referer,
-        source: source.toLowerCase(),
-      });
-  } catch (error) {
-    console.error("Error inserting data in referer_data table:", error)
-
+  // If sessionId cookie is found in array sessionIds, then don't store refererData
+  const sessionId = req.cookies.sessionId;
+  if(!sessionIds.includes(sessionId)) {
     try {
-      await ErrorLog.create({
-        api: "/",
-        message: "Error inserting data in referer_data table",
-        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
-    } catch (logError) {
-      console.error("Failed to insert into referer_data table:", logError);
+      await RefererData.create({
+          referer,
+          source: source.toLowerCase(),
+        });
+    } catch (error) {
+      console.error("Error inserting data in referer_data table:", error)
+
+      try {
+        await ErrorLog.create({
+          api: "/",
+          message: "Error inserting data in referer_data table",
+          error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+        });
+      } catch (logError) {
+        console.error("Failed to insert into referer_data table:", logError);
+      }
     }
   }
-  
+
+  // Build query params excluding subid, device
+  const queryParams = { ...req.query };
+  delete queryParams.keyword;
+  delete queryParams.source;
+  delete queryParams.subid;
+  // If there are extra params, append them
+  const queryString = new URLSearchParams(queryParams).toString();
+
+  if (queryString) {
+    finalUrl += (finalUrl.includes("?") ? "&" : "?") + queryString;
+  }
+
   console.log("New visit - allowing and redirecting to final URL:", finalUrl);
   return res.redirect(finalUrl);
 }
@@ -547,6 +565,8 @@ function detectDevice(headers) {
   return null;
 }
 
+let sessionIds = [];
+
 async function handleSubIdRedirect(req, res) {
   let refererData;
   try {
@@ -576,12 +596,108 @@ async function handleSubIdRedirect(req, res) {
 
     return res.redirect(randomReferer.referer);
   } else {
-    const fallbackUrl = await getFallbackUrl();
-    console.log('No referer data found, redirecting to fallbackUrl');
-    return res.redirect(fallbackUrl);
+    console.log('NO REFERER AVAILABLE')
+    let refererData;
+    try {
+      refererData = await RefererData.findAll({
+        attributes: ["id", "referer"],
+      });
+    } catch (error) {
+      console.error('Error fetching referer data:', error);
+      return res.status(500).send("Internal Server Error");
+    }
+    const randomReferer = refererData[Math.floor(Math.random() * refererData.length)];
+
+    const updatedTblciReferer = updateTblciInUrl(randomReferer.referer);
+
+    //set cookie
+    const sessionId = randomAlphaNumeric(20);
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 10 * 60 * 1000, // 10 min
+      sameSite: "None"
+    });
+
+    sessionIds.push(sessionId);
+
+    console.log('sessionIds', sessionIds)
+
+    return res.redirect(updatedTblciReferer);
   }
-  
 }
+
+function updateTblciInUrl(url) {
+  const urlObj = new URL(url);
+
+  //Changes for https://api.taboola.com
+  if (urlObj.origin.startsWith("https://api")) {
+    const itemId = urlObj.searchParams.get("item.id");
+    const cpb = urlObj.searchParams.get("cpb");
+    const newTail = randomAlphaNumeric(5);
+    const newitemId = itemId.slice(0, -5) + newTail;
+    const newCpb = cpb.slice(0, -5) + newTail;
+    urlObj.searchParams.set("item.id", newitemId);
+    urlObj.searchParams.set("cpb", newCpb);
+  }
+
+  //Changes for https://trc.taboola.com
+  if (urlObj.origin.startsWith("https://trc")) {
+    const ii = urlObj.searchParams.get("ii");
+    const vi = urlObj.searchParams.get("vi");
+    const cpb = urlObj.searchParams.get("cpb");
+    const newTail = randomAlphaNumeric(5);
+    const newIi = ii.slice(0, -5) + newTail;
+    const newCpb = cpb.slice(0, -5) + newTail;
+    const newVi = Date.now();
+    urlObj.searchParams.set("ii", newIi);
+    urlObj.searchParams.set("cpb", newCpb);
+    urlObj.searchParams.set("vi", newVi);
+  }
+
+  // 1. Get redir param
+  const redirParam = urlObj.searchParams.get("redir");
+  if (!redirParam) return url;
+
+  // 2. Decode the redir URL
+  const decodedRedirUrl = decodeURIComponent(redirParam);
+  const innerUrlObj = new URL(decodedRedirUrl);
+
+  // 3. Get tblci param
+  let tblciValue = innerUrlObj.searchParams.get("tblci");
+  if (!tblciValue) return url;
+
+  // 4. Replace last 20 chars with random
+  const newTail = randomAlphaNumeric(20);
+  const newTblciValue = tblciValue.slice(0, -20) + newTail;
+
+  // 5. Update query param
+  innerUrlObj.searchParams.set("tblci", newTblciValue);
+
+  // 6. Update hash only for tblci part
+  if (innerUrlObj.hash && innerUrlObj.hash.includes("tblci")) {
+    innerUrlObj.hash = innerUrlObj.hash.replace(
+      /(tblci)[^&]*/,
+      `$1${newTblciValue}`
+    );
+  }
+
+  // 7. Put back redir in outer URL
+  urlObj.searchParams.set("redir", innerUrlObj.toString());
+
+  return urlObj.toString();
+}
+
+function randomAlphaNumeric(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 
 app.get("/headers", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "headers.html"));
