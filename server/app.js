@@ -297,6 +297,8 @@ app.get("/", async (req, res) => {
 
 async function handleKeywordSourceRedirect(req, res) {
   const { keyword, source } = req.query;
+  const sessionId = req.cookies.sessionId;
+
   console.log(`Handling keyword-source redirect for keyword: ${keyword}, source: ${source}`);
 
   //If request is from facebook or taboola bot, redirect it to aboutfashions search results page
@@ -438,6 +440,7 @@ async function handleKeywordSourceRedirect(req, res) {
       user_agent: userAgent,
       referer: referer,
       failure: false,
+      session_id: sessionIds.includes(sessionId) ? 1 : 0,
     });
   } catch (error) {
     console.error("Error inserting into client details table:", error);
@@ -475,7 +478,6 @@ async function handleKeywordSourceRedirect(req, res) {
   }
 
   // If sessionId cookie is found in array sessionIds, then don't store refererData
-  const sessionId = req.cookies.sessionId;
   if(!sessionIds.includes(sessionId)) {
     try {
       await RefererData.create({
@@ -622,8 +624,6 @@ async function handleSubIdRedirect(req, res) {
     });
 
     sessionIds.push(sessionId);
-
-    console.log('sessionIds', sessionIds)
 
     return res.redirect(updatedTblciReferer);
   }
