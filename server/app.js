@@ -75,32 +75,14 @@ app.get("/", async (req, res) => {
     return handleKeywordSourceRedirect(req, res);
   }
 
+  const fallbackUrl = await getFallbackUrl();
+
   if (subid) {
-    return handleSubIdRedirect(req, res);
-  }
-
-  let selfRedirectingUrls;
-  let fallbackUrl;
-  try {
-    selfRedirectingUrls = await SelfRedirectingUrl.findAll({
-      attributes: ["url"],
-    });
-  } catch (error) {
-    console.error("Error fetching self_redirecting_urls:", error);
-    try {
-      await ErrorLog.create({
-        api: "/",
-        message: "Error fetching from self_redirecting_urls table",
-        error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
-    } catch (logError) {
-      console.error("Failed to insert into error_logs table:", logError);
+    if (process.env.ALLOW_SUBID_URL === 'true') {
+      return handleSubIdRedirect(req, res);
+    } else {
+      return res.redirect(fallbackUrl)
     }
-    return res.status(500).send("Internal Server Error");
-  }
-
-  if (selfRedirectingUrls.length !== 0) {
-    fallbackUrl = selfRedirectingUrls[Math.floor(Math.random() * selfRedirectingUrls.length)].url;
   }
 
   const userAgent = req.headers["user-agent"] || null;
@@ -325,7 +307,7 @@ async function handleKeywordSourceRedirect(req, res) {
   const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
   const userAgent = req.headers["user-agent"] || null;
 
-  //If IP and feed_url_id exist in day_visits table, redirect to fallback URL
+  //Fetch all visited feed_url_id for the Client IP from day_visits table
   let visitedUrlIds = [];
   try {
     const visits = await DayVisit.findAll({
