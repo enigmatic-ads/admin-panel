@@ -139,13 +139,13 @@ const generateReport = async (req, res) => {
   try {
     rows = await sequelize.query (
       `
-      SELECT fu.campaign_id, fu.url, COUNT(*) AS hits FROM client_details cd
+      SELECT fu.campaign_id, fu.url, fu.cap, fu.available_cap, COUNT(*) AS hits FROM client_details cd
       JOIN feed_urls fu on cd.feed_url_id = fu.id
       WHERE feed_url_id IS NOT null 
         AND cd.failure IS false 
         AND cd.created_at::date BETWEEN :startDate AND :endDate
         ${condition}
-      GROUP BY fu.campaign_id, fu.url;
+      GROUP BY fu.campaign_id, fu.url, fu.cap, fu.available_cap;
       `,
       {
         replacements: { startDate, endDate, campaignId }
