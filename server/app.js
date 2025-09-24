@@ -9,7 +9,7 @@ const facebookRoutes = require('./routes/facebook');
 const campaignRoutes = require('./routes/campaign');
 const taboolaRoutes = require('./routes/taboola');
 const cors = require('cors');
-const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData, SubidBlockedHit } = require('./models');
+const { RedirectUrl, ClientDetail, DayVisit, SelfRedirectingUrl, ErrorLog, FeedUrl, RefererData, SubidHit } = require('./models');
 const path = require('path');
 const cookieParser = require("cookie-parser");
 
@@ -88,7 +88,7 @@ app.get("/", async (req, res) => {
       const userAgent = req.headers["user-agent"] || null;
 
       try {
-        await SubidBlockedHit.create({
+        await SubidHit.create({
           subid: subid,
           remote_ip: remoteIp,
           client_ip: clientIp,
@@ -96,7 +96,7 @@ app.get("/", async (req, res) => {
           referer: referer,
         });
       } catch (error) {
-        console.error('Error inserting into subid_blocked_hits:', error);
+        console.error('Error inserting into subid_hits:', error);
         return res.status(500).send('Internal Server Error.');
       }
       
@@ -499,11 +499,12 @@ async function handleKeywordSourceRedirect(req, res) {
     }
   }
 
-  // Build query params excluding subid, device
+  // Build query params excluding keyword, source, subid, device
   const queryParams = { ...req.query };
   delete queryParams.keyword;
   delete queryParams.source;
   delete queryParams.subid;
+  delete queryParams.device;
   // If there are extra params, append them
   const queryString = new URLSearchParams(queryParams).toString();
 
