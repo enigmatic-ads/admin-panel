@@ -1,8 +1,8 @@
 'use strict';
 
 module.exports = (sequelize, DataTypes) => {
-  const SubidBlockedHit = sequelize.define(
-    'SubidBlockedHit',
+  const SubidHit = sequelize.define(
+    'SubidHit',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -42,11 +42,11 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'subid_blocked_hits',
+      tableName: 'subid_hits',
       timestamps: true,
       underscored: true,
     }
   );
 
-  return SubidBlockedHit;
+  return SubidHit;
 };
