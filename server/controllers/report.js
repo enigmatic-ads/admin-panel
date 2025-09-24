@@ -130,22 +130,11 @@ const generateReport = async (req, res) => {
       return res.status(400).json({ error: "Missing required parameters" });
     }
 
-  // const istOffsetMs = 5.5 * 60 * 60 * 1000;
-  // const startUtc = new Date(new Date(startDate + 'T00:00:00').getTime() - istOffsetMs)
-  //   .toISOString()
-  //   .replace('T', ' ')
-  //   .replace('Z', '');
-  // const endUtc = new Date(new Date(endDate + 'T23:59:59').getTime() - istOffsetMs)
-  //   .toISOString()
-  //   .replace('T', ' ')
-  //   .replace('Z', '');
-
   let condition = '';
   if (campaignId) {
     condition = 'AND fu.campaign_id = :campaignId';
   }
 
-  // AND date(cd.created_at) BETWEEN :startUtc AND :endUtc
   let rows;
   try {
     rows = await sequelize.query (
@@ -154,7 +143,7 @@ const generateReport = async (req, res) => {
       JOIN feed_urls fu on cd.feed_url_id = fu.id
       WHERE feed_url_id IS NOT null 
         AND cd.failure IS false 
-        AND (cd.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date BETWEEN :startDate AND :endDate
+        AND cd.created_at::date BETWEEN :startDate AND :endDate
         ${condition}
       GROUP BY fu.campaign_id, fu.url;
       `,
