@@ -280,6 +280,8 @@ export default function Reports() {
                     <th className="px-4 py-2 text-left">Campaign ID</th>
                     <th className="px-4 py-2 text-left">URL</th>
                     <th className="px-4 py-2 text-left">Hits</th>
+                    <th className="px-4 py-2 text-left">Cap</th>
+                    <th className="px-4 py-2 text-left">Available Cap</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,6 +293,8 @@ export default function Reports() {
                       <td className="px-4 py-2">{row.campaign_id}</td>
                       <td className="px-4 py-2">{row.url}</td>
                       <td className="px-4 py-2">{row.hits}</td>
+                      <td className="px-4 py-2">{row.cap}</td>
+                      <td className="px-4 py-2">{row.available_cap}</td>
                     </tr>
                   ))}
                 </tbody>
