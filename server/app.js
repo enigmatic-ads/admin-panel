@@ -572,6 +572,25 @@ function detectDevice(headers) {
 let sessionIds = [];
 
 async function handleSubIdRedirect(req, res) {
+  const { subid } = req.query;
+  const clientIp = req.headers["x-forwarded-for"]?.split(",").pop().trim() || null;
+  const referer = req.headers.referer || req.headers.referrer || null;
+  const remoteIp = req.socket?.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : null;
+  const userAgent = req.headers["user-agent"] || null;
+
+  try {
+    await SubidHit.create({
+      subid: subid,
+      remote_ip: remoteIp,
+      client_ip: clientIp,
+      user_agent: userAgent,
+      referer: referer,
+    });
+  } catch (error) {
+    console.error('Error inserting into subid_hits:', error);
+    return res.status(500).send('Internal Server Error.');
+  }
+
   let refererData;
   try {
     refererData = await RefererData.findAll({
