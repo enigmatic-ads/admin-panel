@@ -643,6 +643,18 @@ async function handleSubIdRedirect(req, res) {
       return res.status(500).send('Internal Server Error');
     }
 
+    //set cookie
+    const sessionId = randomAlphaNumeric(20);
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 10 * 60 * 1000, // 10 min
+      sameSite: "None"
+    });
+
+    sessionIds.push(sessionId);
+
     return res.redirect(randomReferer.referer);
   } else {
     console.log('NO REFERER AVAILABLE')
