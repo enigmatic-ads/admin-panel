@@ -377,6 +377,7 @@ async function handleKeywordSourceRedirect(req, res) {
           referer: referer,
           failure: true,
           failure_reason: "already visited today",
+          session_id: sessionIds.includes(sessionId) ? 1 : 0,
         });
       } catch (error) {
 
@@ -417,6 +418,7 @@ async function handleKeywordSourceRedirect(req, res) {
         referer: referer,
         failure: true,
         failure_reason: "null referer",
+        session_id: sessionIds.includes(sessionId) ? 1 : 0,
       });
     } catch (error) {
 
