@@ -368,6 +368,32 @@ async function handleKeywordSourceRedirect(req, res) {
 
     if (!urls || urls.length === 0) {
       console.log("No available URL found, redirecting to fallback");
+      try {
+        await ClientDetail.create({
+          feed_url_id: null,
+          remote_ip: remoteIp,
+          client_ip: clientIp,
+          user_agent: userAgent,
+          referer: referer,
+          failure: true,
+          failure_reason: "already visited today",
+        });
+      } catch (error) {
+
+        console.error("Error inserting into client details table:", error);
+        try {
+          await ErrorLog.create({
+            api: "/",
+            message: "Error inserting into client details table",
+            error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+          });
+        } catch (logError) {
+          console.error("Failed to insert into error_logs table:", logError);
+        }
+        return res.redirect(fallbackUrl);
+
+      }
+
       return res.redirect(fallbackUrl);
     }
 
@@ -384,7 +410,7 @@ async function handleKeywordSourceRedirect(req, res) {
   if(referer === null && process.env.BLOCK_NULL_REFERER === 'true') {
     try {
       await ClientDetail.create({
-        feed_url_id: urlData.id,
+        feed_url_id: null,
         remote_ip: remoteIp,
         client_ip: clientIp,
         user_agent: userAgent,
