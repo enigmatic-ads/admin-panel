@@ -540,6 +540,26 @@ async function handleKeywordSourceRedirect(req, res) {
     finalUrl += (finalUrl.includes("?") ? "&" : "?") + queryString;
   }
 
+  if (sessionIds.includes(sessionId)) {
+    res.set("Referrer-Policy", "no-referrer");
+
+    console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalUrl);
+
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="refresh" content="0;url=${finalUrl}">
+      </head>
+      <body>
+        <script>
+          window.location.replace("${finalUrl}");
+        </script>
+      </body>
+      </html>
+    `);
+  }
+
   console.log("New visit - allowing and redirecting to final URL:", finalUrl);
   return res.redirect(finalUrl);
 }
