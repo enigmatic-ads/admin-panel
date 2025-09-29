@@ -277,7 +277,7 @@ export default function Reports() {
                 <thead>
                   <tr className="bg-gray-200 dark:bg-navy-700 text-gray-700 dark:text-gray-200">
                     <th className="px-4 py-2 text-left">Campaign ID</th>
-                    <th className="px-4 py-2 text-left">URL</th>
+                    <th className="px-4 py-2 text-left w-[450px]">URL</th>
                     <th className="px-4 py-2 text-left">Hits</th>
                     <th className="px-4 py-2 text-left">Sub Hits</th>
                     <th className="px-4 py-2 text-left">Cap</th>
