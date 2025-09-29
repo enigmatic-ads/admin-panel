@@ -136,6 +136,7 @@ const generateReport = async (req, res) => {
   }
 
   let rows;
+  let failedHitsRows;
   try {
     rows = await sequelize.query (
       `
@@ -158,12 +159,36 @@ const generateReport = async (req, res) => {
         replacements: { startDate, endDate, campaignId }
       }
     );
+
+    failedHitsRows = await sequelize.query(
+      `
+      SELECT 
+        COUNT(*) FILTER (WHERE session_id = 0) AS failed_hits,
+        COUNT(*) FILTER (WHERE session_id = 1) AS failed_sub_hits
+      FROM client_details
+      WHERE failure = TRUE
+        AND created_at::date BETWEEN :startDate AND :endDate;
+      `,
+      {
+        replacements: { 
+          startDate, 
+          endDate,
+        },
+        type: sequelize.QueryTypes.SELECT
+      }
+    );
+
   } catch(error) {
     console.error("Error fetching report:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 
-  res.json({ result: rows[0] });
+  res.json(
+    { 
+      result: rows[0],
+      failedHits: failedHitsRows[0],
+    }
+  );
 }
 
 module.exports = {
