@@ -678,17 +678,17 @@ async function handleSubIdRedirect(req, res) {
   if (process.env.REMOVE_SUBID_REQUEST_REFERER === 'true') {
     res.set("Referrer-Policy", "no-referrer");
 
-    console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalUrl);
+    console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalReferer);
 
     return res.send(`
       <!DOCTYPE html>
       <html>
       <head>
-        <meta http-equiv="refresh" content="0;url=${finalUrl}">
+        <meta http-equiv="refresh" content="0;url=${finalReferer}">
       </head>
       <body>
         <script>
-          window.location.replace("${finalUrl}");
+          window.location.replace("${finalReferer}");
         </script>
       </body>
       </html>
