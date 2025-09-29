@@ -540,26 +540,6 @@ async function handleKeywordSourceRedirect(req, res) {
     finalUrl += (finalUrl.includes("?") ? "&" : "?") + queryString;
   }
 
-  if (sessionIds.includes(sessionId) && process.env.REMOVE_SUBID_REQUEST_REFERER === 'true') {
-    res.set("Referrer-Policy", "no-referrer");
-
-    console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalUrl);
-
-    return res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta http-equiv="refresh" content="0;url=${finalUrl}">
-      </head>
-      <body>
-        <script>
-          window.location.replace("${finalUrl}");
-        </script>
-      </body>
-      </html>
-    `);
-  }
-
   console.log("New visit - allowing and redirecting to final URL:", finalUrl);
   return res.redirect(finalUrl);
 }
@@ -652,6 +632,7 @@ async function handleSubIdRedirect(req, res) {
     return res.status(500).send("Internal Server Error");
   }
   
+  let finalReferer;
   if (refererData && refererData.length > 0) {
     const randomReferer = refererData[Math.floor(Math.random() * refererData.length)];
 
@@ -665,19 +646,7 @@ async function handleSubIdRedirect(req, res) {
       return res.status(500).send('Internal Server Error');
     }
 
-    //set cookie
-    const sessionId = randomAlphaNumeric(20);
-
-    res.cookie("sessionId", sessionId, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 10 * 60 * 1000, // 10 min
-      sameSite: "None"
-    });
-
-    sessionIds.push(sessionId);
-
-    return res.redirect(randomReferer.referer);
+    finalReferer = randomReferer.referer;
   } else {
     console.log('NO REFERER AVAILABLE')
     let refererData;
@@ -691,22 +660,42 @@ async function handleSubIdRedirect(req, res) {
     }
     const randomReferer = refererData[Math.floor(Math.random() * refererData.length)];
 
-    const updatedTblciReferer = updateTblciInUrl(randomReferer.referer);
-
-    //set cookie
-    const sessionId = randomAlphaNumeric(20);
-
-    res.cookie("sessionId", sessionId, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 10 * 60 * 1000, // 10 min
-      sameSite: "None"
-    });
-
-    sessionIds.push(sessionId);
-
-    return res.redirect(updatedTblciReferer);
+    finalReferer = updateTblciInUrl(randomReferer.referer);
   }
+
+  //set cookie
+  const sessionId = randomAlphaNumeric(20);
+
+  res.cookie("sessionId", sessionId, {
+    httpOnly: true,
+    secure: true,
+    maxAge: 10 * 60 * 1000, // 10 min
+    sameSite: "None"
+  });
+
+  sessionIds.push(sessionId);
+
+  if (process.env.REMOVE_SUBID_REQUEST_REFERER === 'true') {
+    res.set("Referrer-Policy", "no-referrer");
+
+    console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalUrl);
+
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="refresh" content="0;url=${finalUrl}">
+      </head>
+      <body>
+        <script>
+          window.location.replace("${finalUrl}");
+        </script>
+      </body>
+      </html>
+    `);
+  }
+
+  return res.redirect(finalReferer);
 }
 
 function updateTblciInUrl(url) {
