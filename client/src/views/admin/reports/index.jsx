@@ -303,8 +303,8 @@ export default function Reports() {
                   {failedHits && (
                     <tr className="border-t bg-red-50 dark:bg-navy-700 text-gray-700  dark:text-gray-200">
                       <td colSpan="2" className="px-4 py-2 font-semibold">Failures:</td>
-                      <td className="px-4 py-2 text-red-600">{failedHits.failed_hits}</td>
-                      <td className="px-4 py-2 text-red-600">{failedHits.failed_sub_hits}</td>
+                      <td className="px-4 py-2 text-red-500">{failedHits.failed_hits}</td>
+                      <td className="px-4 py-2 text-red-500">{failedHits.failed_sub_hits}</td>
                       <td colSpan="2"></td>
                     </tr>
                   )}
