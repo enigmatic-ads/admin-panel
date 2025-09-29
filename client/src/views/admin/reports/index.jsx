@@ -22,9 +22,7 @@ export default function Reports() {
   const [insightLevelInput, setInsightLevelInput] = useState(
     insightSourceInput === "facebook" ? "adset" : "ad"
   );
-
-
-  
+  const [failedHits, setFailedHits] = useState(null);
 
   // Redirect if no token
   useEffect(() => {
@@ -92,6 +90,7 @@ export default function Reports() {
 
       if (response.ok) {
         setReportData(Array.isArray(data.result) ? data.result : []);
+        setFailedHits(data.failedHits || null);
       } else {
         alert(data.error || "Failed to fetch report.");
       }
@@ -299,6 +298,16 @@ export default function Reports() {
                       <td className="px-4 py-2">{row.available_cap}</td>
                     </tr>
                   ))}
+
+                  {/*Failures Row */}
+                  {failedHits && (
+                    <tr className="border-t bg-red-50 dark:bg-navy-700 text-gray-700  dark:text-gray-200">
+                      <td colSpan="2" className="px-4 py-2 font-semibold">Failures:</td>
+                      <td className="px-4 py-2 text-red-600">{failedHits.failed_hits}</td>
+                      <td className="px-4 py-2 text-red-600">{failedHits.failed_sub_hits}</td>
+                      <td colSpan="2"></td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
