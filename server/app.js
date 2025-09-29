@@ -540,7 +540,7 @@ async function handleKeywordSourceRedirect(req, res) {
     finalUrl += (finalUrl.includes("?") ? "&" : "?") + queryString;
   }
 
-  if (sessionIds.includes(sessionId)) {
+  if (sessionIds.includes(sessionId) && process.env.REMOVE_SUBID_REQUEST_REFERER === 'true') {
     res.set("Referrer-Policy", "no-referrer");
 
     console.log("Subid visit - allowing and redirecting to final URL with HTML meta refresh:", finalUrl);
