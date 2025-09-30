@@ -6,6 +6,7 @@ export default function Reports() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [forToday, setForToday] = useState(false);
+  const [appliedForToday, setAppliedForToday] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -35,11 +36,10 @@ export default function Reports() {
   // On initial load → set today's date and tomorrow
   useEffect(() => {
     const today = new Date();
-    const tomorrow = new Date();
 
     const formatDate = (date) => date.toISOString().split("T")[0];
     const start = formatDate(today);
-    const end = formatDate(tomorrow);
+    const end = formatDate(today);
 
     setFromDate(start);
     setToDate(end);
@@ -54,10 +54,12 @@ export default function Reports() {
   }, [insightSourceInput]);
 
 
-  const handleGetReport = async (start, end, skipValidation = false) => {
+  const handleGetReport = async (start, end, skipValidation = false, applyFlag = true) => {
+    const isApplied = typeof applyFlag === "boolean" ? applyFlag : appliedForToday;
+
     let newErrors = {};
 
-    if (!start && !end && !forToday && !skipValidation) {
+    if (!start && !end && !appliedForToday && !skipValidation) {
       if (!fromDate) newErrors.fromDate = "*From Date is required";
       if (!toDate) newErrors.toDate = "*To Date is required";
     }
@@ -91,6 +93,12 @@ export default function Reports() {
       if (response.ok) {
         setReportData(Array.isArray(data.result) ? data.result : []);
         setFailedHits(data.failedHits || null);
+
+        const todayStr = new Date().toISOString().split("T")[0];
+        const reportStart = start || fromDate;
+        const reportEnd = end || toDate;
+        const isTodayReport = reportStart === todayStr && reportEnd === todayStr;
+        setAppliedForToday(isTodayReport);
       } else {
         alert(data.error || "Failed to fetch report.");
       }
@@ -280,8 +288,12 @@ export default function Reports() {
                     <th className="px-4 py-2 text-left w-[450px]">URL</th>
                     <th className="px-4 py-2 text-left">Hits</th>
                     <th className="px-4 py-2 text-left">Sub Hits</th>
-                    <th className="px-4 py-2 text-left">Cap</th>
-                    <th className="px-4 py-2 text-left">Available Cap</th>
+                    {appliedForToday && (
+                      <>
+                        <th className="px-4 py-2 text-left">Cap</th>
+                        <th className="px-4 py-2 text-left">Available Cap</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -294,18 +306,32 @@ export default function Reports() {
                       <td className="px-4 py-2">{row.url}</td>
                       <td className="px-4 py-2">{row.hits}</td>
                       <td className="px-4 py-2">{row.sub_hits}</td>
-                      <td className="px-4 py-2">{row.cap}</td>
-                      <td className="px-4 py-2">{row.available_cap}</td>
+                      {appliedForToday && (
+                        <>
+                          <td className="px-4 py-2">{row.cap}</td>
+                          <td className="px-4 py-2">{row.available_cap}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
 
                   {/*Failures Row */}
-                  {failedHits && (
+                  {failedHits && appliedForToday && (
                     <tr className="border-t bg-red-50 dark:bg-navy-700 text-gray-700  dark:text-gray-200">
                       <td colSpan="2" className="px-4 py-2 font-semibold">Failures:</td>
                       <td className="px-4 py-2 text-red-500">{failedHits.failed_hits}</td>
                       <td className="px-4 py-2 text-red-500">{failedHits.failed_sub_hits}</td>
                       <td colSpan="2"></td>
+                    </tr>
+                  )}
+
+                  {failedHits && !appliedForToday && (
+                    <tr className="border-t bg-red-50 dark:bg-navy-700 text-gray-700  dark:text-gray-200">
+                      <td colSpan="2" className="px-4 py-2 font-semibold">
+                        Failures:
+                      </td>
+                      <td className="px-4 py-2 text-red-500">{failedHits.failed_hits}</td>
+                      <td className="px-4 py-2 text-red-500">{failedHits.failed_sub_hits}</td>
                     </tr>
                   )}
                 </tbody>
